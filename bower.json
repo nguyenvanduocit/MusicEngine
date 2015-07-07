@@ -5,7 +5,8 @@
     "bootstrap": "latest",
     "jquery": "latest",
     "typeahead.js": "latest",
-    "font-awesome": "latest"
+    "font-awesome": "latest",
+    "moment": "latest"
   },
   "directory": "components",
   "homepage": "https://github.com/tamaspiros/advanced-chat",

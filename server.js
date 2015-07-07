@@ -6,112 +6,93 @@ var npid = require( "npid" );
 var Song = require( './song.js' );
 var uuid = require( 'node-uuid' );
 var _ = require( 'underscore' )._;
-
-app.set( "ipaddr", "127.0.0.1" );
-app.set( "port", 8181 );
-app.set( "views", __dirname + "/views" );
-app.set( "view engine", "jade" );
-
-app.use( express.static( "public", __dirname + "/public" ) );
-app.use( '/components', express.static( __dirname + '/components' ) );
-
 /**
  * Rounting
  */
-app.get( "/", function ( request, response ) {
-	response.render( "index" );
-} );
-
-app.get( "/admin", function ( request, response ) {
-	response.render( "admin" );
-} );
-
-app.get( "/player", function ( request, response ) {
-	response.render( "player" );
-} );
+require('./config')(app, express, http);
+require('./routes')(app, io);
 /**
  * Define some var
  */
+var maxUser = 100;
 var songList = [];
-var userList = [];
-var roomName = 'music_room';
 /**
  * On connection
  */
-io.on( 'connection', function ( socket ) {
+var chat = io.on( 'connection', function ( socket ) {
 
-	if ( _.indexOf( userList, socket ) == - 1 ) {
-		/**
-		 * If user is not exist
-		 */
-		socket.join( roomName );
-		/**
-		 * Send to current user
-		 */
-		socket.emit( 'connect.result', {result: 'success', msg: 'Welcome'} );
-		socket.emit( 'member.list', userList );
-		/**
-		 * send the song list
-		 */
-		socket.emit('song.list', songList);
-		/**
-		 * Send to another user
-		 */
-		socket.broadcast.emit( 'member.join', {msg: 'User join'} );
-		/**
-		 * On disconnection
-		 */
-		socket.on( 'disconnect', function () {
-			userList = _.without( userList, socket );
-			socket.broadcast.emit( 'member.leave', {msg: 'User leave'} );
-		} );
+	socket.on('load',function(data){
 
-		/**
-		 * FOR USER
-		 */
-		socket.on( 'song.submit', function ( data ) {
-			if ( _.indexOf( songList, data.url ) == - 1 ) {
-				var song = new Song( data.name, data.url );
-				songList.push( song );
-				/**
-				 * send the result for submiter
-				 */
-				socket.emit( 'song.submit.result', {result: 'success', msg: 'Added'} );
-				/**
-				 * Broadcast the song to all client
-				 */
-				io.sockets.emit('song.new', song);
-			}
-			else {
-				socket.emit( 'song.submit.result', {result: 'exist', msg: 'This song is already added !'} );
-			}
-		} );
-		socket.on( 'song.vote', function ( data ) {
-		} );
-		/**
-		 * FOR PLAYER
-		 */
-		socket.on( 'song.next', function ( data ) {
-		} );
-		/**
-		 * FOR ADMIN
-		 */
-		socket.on( 'song.delete', function ( data ) {
-		} );
-	}
-	else {
+		var room = findClientsSocket(io,data);
+		if(room.length === 0 ) {
 
-	}
-	function isSongExist( url ) {
-		if ( _.find() ) {
-			return true;
+			socket.emit('peopleinchat', {number: 0});
+		}
+		else if(room.length < maxUser) {
+
+			socket.emit('peopleinchat', {
+				number: room.length,
+				user: room[0].username,
+				id: data
+			});
+			socket.emit('song.list', songList);
+		}
+		else if(room.length >= maxUser) {
+
+			chat.emit('tooMany', {boolean: true});
+		}
+	});
+
+	// and add them to the room
+	socket.on('login', function(data) {
+
+		var room = findClientsSocket(io, data.id);
+		if (room.length < maxUser) {
+			socket.username = data.user;
+			socket.room = data.id;
+
+			// Add the client to the room
+			socket.join(data.id);
+			// Send the startChat event to all the people in the
+			// room, along with a list of people that are in it.
+			chat.in(data.id).emit('login.result', {success:true,id: data.id});
 		}
 		else {
-			return false;
+			socket.emit('tooMany', {boolean: true});
 		}
-	}
+	});
+	// Somebody left the chat
+	socket.on('disconnect', function() {
+		// leave the room
+		socket.leave(socket.room);
+	});
+
+
+	// Handle the sending of messages
+	socket.on('msg', function(data){
+		songList.push(new Song(data.user, data.msg));
+		// When the server receives a message, it sends it to the other person in the room.
+		socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user});
+	});
+
 } );
 
-http.listen( app.get( "port" ), app.get( "ipaddr" ), function () {
-	console.log( "Server up and running. Go to http://" + app.get( "ipaddr" ) + ":" + app.get( "port" ) );
-} );
+function findClientsSocket(io,roomId, namespace) {
+	var res = [],
+		ns = io.of(namespace ||"/");    // the default namespace is "/"
+
+	if (ns) {
+		for (var id in ns.connected) {
+			if(roomId) {
+				var index = ns.connected[id].rooms.indexOf(roomId) ;
+				if(index !== -1) {
+					res.push(ns.connected[id]);
+				}
+			}
+			else {
+				res.push(ns.connected[id]);
+			}
+		}
+	}
+	return res;
+}

@@ -1,0 +1,48 @@
+doctype html
+html
+  head
+    link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans Condensed:300italic,300,700')
+    link(rel='stylesheet', href='/css/style.css')
+    script(src='/components/jquery/dist/jquery.min.js')
+    script(src='/components/moment/moment.js')
+    script(src='/socket.io/socket.io.js')
+    script(src='/js/room.js')
+    title MusicEngine
+  body
+    header(class="banner")
+      h1(class="bannertext")
+        a(href="http://tutorialzine.com/2014/03/nodejs-private-webchat/", id="logo", ) Tutorial
+          span zine
+    section.section
+      div.connected
+        img(src="/img/unnamed.jpg")#creatorImage
+        div.infoConnected
+          h2 Who are you?
+          br
+          form.loginForm
+            input(type="text", placeholder="Your nick name")#yourName
+            input(type="submit", value="ENTER")#yourEnter
+        div.disconnected
+          img(src="/img/unnamed.jpg")#creatorImage
+          div.infoConnected
+            h2
+      div.personinside
+        img(src="/img/unnamed.jpg")#ownerImage
+        div.infoInside
+          h2 Chat with
+            span.nickname-chat
+          br
+          form.loginForm
+            input(type="text", placeholder="Your nick name")#hisName
+            input(type="submit", value="ENTER")#hisEnter
+      div.invite-textfield
+        h2 Oops, there are no other people in this chat!
+        h5 Invite a friend by sending them this URL
+        div.link
+          a(title="Invite a friend")#link
+      div.chatscreen
+        ul.chats
+    footer
+      form#chatform
+        input(type="url", placeholder="Write something..")#message
+        input(type="submit", value="SEND")#submit
