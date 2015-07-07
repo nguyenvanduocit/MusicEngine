@@ -17,11 +17,15 @@ Song.prototype.resetVote = function(){
 	this.score = 0;
 };
 
-Song.isPlaying = function(){
+Song.prototype.isPlaying = function(){
 	return this.status == 'playing';
 };
 
-Song.isPlaying = function(){
-	return this.status == 'playing';
+Song.prototype.getName = function(){
+	return this.name;
+};
+
+Song.prototype.getUrl = function(){
+	return this.url;
 };
 module.exports = Song;

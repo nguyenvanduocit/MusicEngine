@@ -5,20 +5,18 @@ html
     link(rel='stylesheet', href='/css/style.css')
     script(src='components/jquery/dist/jquery.min.js')
     script(src='/socket.io/socket.io.js')
-    script(src='/js/index.js')</b>
+    script(src='/js/index.js')
     title MusicEngine
   body
     h1 Super Awesome Chatroom
+    form#submitForm
+      div
+        label Name
+        input(type="text", name='name')#songName
+      div
+        label Url
+        input(type="text", name='url')#songURL
+      div
+        input(type="submit", value="Submit",disabled=true)#submitButton
     div
-      div.inlineBlock
-        span Your name:
-          input(type="text", value="Anonymous")#name
-        br
-        form#messageForm
-          textarea(rows="4", cols="50", placeholder="Share something!", maxlength=200)#outgoingMessage
-          input(type="button", value="Share", disabled=true)#send
-      div.inlineBlock.topAligned
-        b Participants
-        br
-        div#participants
-    div#messages
+      ul#songList
