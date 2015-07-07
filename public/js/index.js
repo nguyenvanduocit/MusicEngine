@@ -4,6 +4,7 @@ function init() {
 	var sessionId = '';
 
 	var $songList = $( '#songList' );
+	var $memberList = $( '#memberList' );
 	var $submitForm = $( '#submitForm' );
 
 	socket.on( 'connect', function ( data ) {
@@ -12,16 +13,17 @@ function init() {
 
 	} );
 
-	socket.on( 'member.join', function ( data ) {
-		if ( data.result && (
-			data.result == 'success'
-			) ) {
+	socket.on( 'connect.result', function ( data ) {
+		if (data.result == 'success') {
 			/**
 			 * Join success
 			 */
 			$( '#submitButton' ).removeAttr( 'disabled' );
 		}
-		console.log( data.msg );
+	} );
+
+	socket.on( 'member.join', function ( member ) {
+		addMember(member);
 	} );
 
 	socket.on( 'member.list', function ( userList ) {
@@ -33,9 +35,7 @@ function init() {
 	} );
 
 	socket.on( 'song.submit.result', function ( data ) {
-		if(data.result == 'success'){
-			addSong(data.song);
-		}
+		console.log(data);
 	} );
 
 	socket.on( 'song.new', function ( song ) {
@@ -46,7 +46,7 @@ function init() {
 		$songList.find( '#' + data.id ).remove();
 	} );
 
-	socket.on( 'song.refresh', function ( songList ) {
+	socket.on( 'song.list', function ( songList ) {
 		for(var index = 0; index < songList.length; index++){
 			addSong(songList[index]);
 		}
@@ -58,7 +58,11 @@ function init() {
 		$songLi.data( 'url', song.url );
 		$songList.append( $songLi );
 	}
-
+	function addMember(member){
+		console.log(member);
+		var $memberLi = $( '<li>' + song.name + '</li>' );
+		$memberList.append( $memberLi );
+	}
 	/**
 	 * PLAYER
 	 */

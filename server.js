@@ -48,12 +48,12 @@ io.on( 'connection', function ( socket ) {
 		/**
 		 * Send to current user
 		 */
-		socket.emit( 'member.join', {result: 'success', msg: 'Welcome'} );
+		socket.emit( 'connect.result', {result: 'success', msg: 'Welcome'} );
 		socket.emit( 'member.list', userList );
 		/**
 		 * send the song list
 		 */
-		socket.emit('song.refresh', songList);
+		socket.emit('song.list', songList);
 		/**
 		 * Send to another user
 		 */
@@ -76,11 +76,11 @@ io.on( 'connection', function ( socket ) {
 				/**
 				 * send the result for submiter
 				 */
-				socket.emit( 'song.submit.result', {result: 'success', msg: 'Added', song:song} );
+				socket.emit( 'song.submit.result', {result: 'success', msg: 'Added'} );
 				/**
 				 * Broadcast the song to all client
 				 */
-				socket.broadcast.emit( 'song.new', song );
+				io.sockets.emit('song.new', song);
 			}
 			else {
 				socket.emit( 'song.submit.result', {result: 'exist', msg: 'This song is already added !'} );
