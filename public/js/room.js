@@ -31,9 +31,9 @@ $(function(){
 		socket.emit('load', id);
 	});
 
-	socket.on('song.list', function(songList){
+	socket.on('playlist.songList', function(songList){
 		for(var index = 0;index<songList.length; index++){
-			createMessage(songList[index].url, songList[index].name, songList[index].url);
+			createMessage(songList[index].url, songList[index].name, songList[index].id);
 		}
 	});
 	// receive the names and avatars of all people in the chat room
@@ -101,11 +101,25 @@ $(function(){
 		}
 	});
 
+	socket.on('player.duration', function(durationInfo){
+		console.log(durationInfo);
+		updateDuration(durationInfo.songId, durationInfo.duration);
+	});
+	socket.on('player.song.end', function(data){
+		updateDuration(data.songId, 'Finished');
+	});
+
+	socket.on('song.remove', function(data){
+		var $currentMessageEl = $('#' + data.songId);
+		$currentMessageEl.remove();
+	});
+
 	socket.on('song.add', function(song){
 		showMessage('startChat');
 		createMessage(song.url, song.name, song.id);
 	});
 	socket.on('message.update', function(data){
+		console.log(data);
 		updateMessage(data.msg, data.name, data.id);
 	});
 	socket.on('song.submit.result', function(data){
@@ -138,6 +152,12 @@ $(function(){
 	socket.on('disconnect', function(data) {
 		showMessage('disconnect', data);
 	});
+	function updateDuration(id, duration){
+		var $currentMessageEl = $('#' + id);
+		if($currentMessageEl.length >0){
+			$currentMessageEl.find('span.duration').text(duration);
+		}
+	}
 	// Function that creates a new chat message
 	function updateMessage(msg, title, id){
 		var $currentMessageEl = $('#' + id);
@@ -150,7 +170,7 @@ $(function(){
 
 		var li = $(
 			'<li id="'+id+'" class="me">'+
-			'<b class="title"></b>' +
+			'<b class="title"></b><span class="duration">pending</span>' +
 			'<p class="content"></p>' +
 			'</li>');
 

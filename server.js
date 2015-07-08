@@ -3,9 +3,9 @@ var app = express();
 var http = require( 'http' ).createServer( app );
 var io = require( "socket.io" )( http );
 var npid = require( "npid" );
-var Song = require( './song.js' );
 var uuid = require( 'node-uuid' );
 var _ = require( 'underscore' )._;
+var backbone = require( 'backbone' );
 var request = require('request');
 /**
  * Rounting
@@ -16,7 +16,9 @@ require('./routes')(app, io);
  * Define some var
  */
 var maxUser = 100;
-var songList = [];
+var songList = new backbone.Collection();
+var Song = backbone.Model.extend();
+var isPlaying = false;
 /**
  * On connection
  */
@@ -36,7 +38,7 @@ var chat = io.on( 'connection', function ( socket ) {
 				user: room[0].username,
 				id: data
 			});
-			socket.emit('song.list', songList);
+			socket.emit('playlist.songList', songList);
 		}
 		else if(room.length >= maxUser) {
 
@@ -83,17 +85,36 @@ var chat = io.on( 'connection', function ( socket ) {
 		socket.emit('player.login.result', {success:true, msg:'Wellcome to the room #' + socket.room});
 		socket.emit('playlist.songList', songList);
 	});
-	socket.on('song.nextSong', function(){
-		var nextSong = songList[Math.floor(Math.random()*songList.length)];
-		io.in(socket.room).emit('song.play', nextSong);
-	});
+	socket.on('song.nextSong', playNextSong);
+
 	/**
 	 * On client disconnected
 	 */
 	socket.on('disconnect', function() {
-		// leave the room
+		if(socket.type ==='player'){
+			socket.broadcast.to(socket.room ).emit('player.stop');
+		}
 		socket.leave(socket.room);
 		console.log('Disconnected : ' + socket.id);
+	});
+	/**
+	 * Player event
+	 */
+	socket.on('player.duration', function(data){
+		var durationInfo = {
+			duration:data.duration,
+			songId:data.songId
+		};
+		socket.broadcast.to(socket.room ).emit('player.duration', durationInfo);
+	});
+	socket.on('player.song.end', function(data){
+		var info  ={
+			songId:data.songId
+		};
+		songList.remove(data.songId);
+		socket.broadcast.to(socket.room ).emit('player.song.end', info);
+		io.in(socket.room).emit('song.remove', info);
+		playNextSong();
 	});
 
 	// Handle the sending of messages
@@ -103,20 +124,37 @@ var chat = io.on( 'connection', function ( socket ) {
 		request('http://lab.wordpresskite.com/getlink/?link='+data.url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				var data = JSON.parse(body);
-				var song = new Song(data.title, data.location);
-				songList.push(song);
+				var song = new Song();
+				song.set('id',msg_id);
+				song.set('url', data.location);
+				song.set('name', data.title);
+				songList.add(song);
 				/**
 				 * Update the processing message.
 				 */
-				socket.emit('message.update', {msg:song.getUrl(),id:msg_id, name:song.getName()});
+				socket.emit('message.update', {msg:song.get('url'),id:msg_id, name:song.get('name')});
 				/**
 				 * Send add song to another client.
 				 */
-				song.id = msg_id;
 				socket.broadcast.to(socket.room ).emit('song.add', song);
+				if(!isPlaying){
+					playNextSong();
+				}
 			}
 		})
 	});
+	function playNextSong(){
+		if(songList.length > 0){
+			isPlaying = true;
+			var nextSong = songList.at(Math.floor(Math.random()*songList.length));
+			io.in(socket.room).emit('song.play', nextSong);
+		}
+		else
+		{
+			isPlaying = false;
+			io.in(socket.room).emit('song.nomore', {msg:'No more song to play'});
+		}
+	}
 
 });
 

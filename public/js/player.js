@@ -61,16 +61,45 @@ MusicEngine = window.MusicEngine || new Application();
 
 		});
 		Views.Player = Marionette.ItemView.extend({
+			events:{
+				'ended audio#player':'onEnd'
+			},
 			template:'#player-template',
 			initialize:function(options){
 				_.extend( this.options, options );
 				this.model = new Models.Song();
 				this.listenTo(MusicEngine.pubsub,'song.play', this.playSong);
+				this.player = null;
+			},
+			onEnd:function(){
+				MusicEngine.pubsub.trigger('player.song.end', {songId:this.model.get('id')});
+			},
+			onDuration:function(duration){
+				var player = duration.currentTarget;
+				var time = player.currentTime;
+				var mins=Math.floor(time/60);
+				var secs=Math.floor(time-mins * 60);
+				var hrs=Math.floor(time / 3600);
+				var duration_formated = (hrs>9?hrs:"0"+hrs) + ":" + (mins>9?mins:"0"+mins) + ":" + (secs>9?secs:"0"+secs);
+				MusicEngine.pubsub.trigger('player.duration', {duration:duration_formated, songId:this.model.get('id')});
+			},
+			onRender: function(){
+				var self = this;
+				var player = this.$el.find('#player' ).first();
+				if(player.length > 0){
+					this.player = player[0];
+					this.player.onended = function(e){
+						self.onEnd(e);
+					};
+					this.player.ontimeupdate = function(e){
+						self.onDuration(e)
+					};
+				}
 			},
 			playSong:function(song){
 				this.model.set(song);
-				var audioElement = document.createElement('audio');
-				audioElement.play();
+				this.player.src=song.url;
+				this.player.play();
 			}
 		});
 		/**
@@ -96,33 +125,59 @@ MusicEngine = window.MusicEngine || new Application();
 					collection:this.songCollection
 				});
 				this.playerView = new Views.Player();
+				this.initViewEvent();
 				this.initSocketEvent();
 				this.initRegion();
 				this.login();
 				this.startPlay();
 			},
+			initViewEvent:function(){
+				this.listenTo(MusicEngine.pubsub,'player.duration', this.updateDuration);
+				this.listenTo(MusicEngine.pubsub,'player.song.end', this.onPlayerEnd);
+			},
+			onPlayerEnd:function(data){
+				var info  ={
+					songId:data.songId
+				};
+				socket.emit('player.song.end', info);
+			},
+			updateDuration:function(data){
+				var durationInfo = {
+					duration:data.duration,
+					songId:data.songId
+				};
+				socket.emit('player.duration', durationInfo);
+			},
 			initSocketEvent : function(){
 
-				var that = this;
+				var self = this;
 
 				socket.on('player.login.result', function(data){
 					MusicEngine.pubsub.trigger('player.login.result', data);
-					that.loginHandler(data);
+					self.loginHandler(data);
 				});
 				socket.on('playlist.songList', function(data){
 					MusicEngine.pubsub.trigger('playlist.songList', data);
-					that.songListHandler(data);
+					self.songListHandler(data);
 				});
 				socket.on('song.add', function(data){
 					MusicEngine.pubsub.trigger('song.add', data);
-					that.onSongAdd(data);
+					self.onSongAdd(data);
 				});
 				socket.on('song.delete', function(data){
 					MusicEngine.pubsub.trigger('song.delete', data);
-					that.onSongDelete(data);
+					self.onSongDelete(data);
 				});
 				socket.on('song.play', function(data){
+					console.log(data);
 					MusicEngine.pubsub.trigger('song.play', data);
+				});
+				socket.on('song.remove', function(data){
+					MusicEngine.pubsub.trigger('song.remove', data);
+					self.onSongDelete(data);
+				});
+				socket.on('song.nomore', function(data){
+					MusicEngine.pubsub.trigger('song.nomore', data);
 				});
 			},
 
@@ -150,8 +205,8 @@ MusicEngine = window.MusicEngine || new Application();
 			onSongAdd: function(song){
 				this.songCollection.add(song);
 			},
-			onSongDelete:function(song){
-				this.songCollection.remove(song);
+			onSongDelete:function(data){
+				this.songCollection.remove(data.songId);
 			},
 			songListHandler:function(songList){
 				this.songCollection.reset(songList);
