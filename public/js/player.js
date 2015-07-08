@@ -80,6 +80,7 @@ MusicEngine = window.MusicEngine || new Application();
 				this.initSocketEvent();
 				this.initRegion();
 				this.login();
+				this.startPlay();
 			},
 			initSocketEvent : function(){
 
@@ -97,6 +98,9 @@ MusicEngine = window.MusicEngine || new Application();
 				socket.on('song.delete', function(data){
 					that.onSongDelete(data);
 				});
+				socket.on('song.play', function(data){
+					that.onPlaySong(data);
+				});
 			},
 
 			login:function(){
@@ -112,6 +116,12 @@ MusicEngine = window.MusicEngine || new Application();
 						regionClass: playListRegion
 					}
 				});
+			},
+			startPlay:function(){
+				socket.emit('song.nextSong');
+			},
+			onPlaySong:function(song){
+				console.log(song);
 			},
 			onSongAdd: function(song){
 				this.songCollection.add(song);

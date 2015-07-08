@@ -32,9 +32,8 @@ $(function(){
 	});
 
 	socket.on('song.list', function(songList){
-		console.log(songList);
 		for(var index = 0;index<songList.length; index++){
-			createChatMessage(songList[index].url, songList[index].name);
+			createMessage(songList[index].url, songList[index].name, songList[index].url);
 		}
 	});
 	// receive the names and avatars of all people in the chat room
@@ -104,7 +103,14 @@ $(function(){
 
 	socket.on('song.add', function(song){
 		showMessage('startChat');
-		createChatMessage(song.url, song.name);
+		createMessage(song.url, song.name, data.id);
+	});
+	socket.on('message.update', function(data){
+		updateMessage(data.msg, data.name, data.id);
+	});
+	socket.on('song.submit.result', function(data){
+		showMessage('startChat');
+		createMessage(data.msg, data.name, data.id);
 	});
 
 	textarea.keypress(function(e){
@@ -119,19 +125,12 @@ $(function(){
 	});
 
 	chatForm.on('submit', function(e){
-
 		e.preventDefault();
-
 		// Create a new chat message and display it directly
-
 		showMessage("startChat");
-
 		if(textarea.val().trim().length) {
-			createChatMessage(textarea.val(), name);
-
 			// Send the message to the other person in the chat
-			socket.emit('msg', {msg: textarea.val(), user: name});
-
+			socket.emit('song.submit', {url: textarea.val(), user: name});
 		}
 		// Empty the textarea
 		textarea.val("");
@@ -141,18 +140,24 @@ $(function(){
 		showMessage('disconnect', data);
 	});
 	// Function that creates a new chat message
-
-	function createChatMessage(msg,user){
+	function updateMessage(msg, title, id){
+		var $currentMessageEl = $('#' + id);
+		if($currentMessageEl.length >0){
+			$currentMessageEl.find('p').text(msg);
+			$currentMessageEl.find('b').text(title);
+		}
+	}
+	function createMessage(msg,title, id){
 
 		var li = $(
-			'<li class="me">'+
+			'<li id="'+id+'" class="me">'+
 			'<b></b>' +
 			'<p></p>' +
 			'</li>');
 
 		// use the 'text' method to escape malicious user input
 		li.find('p').text(msg);
-		li.find('b').text(user);
+		li.find('b').text(title);
 		li.hide();
 		chats.prepend(li);
 		li.slideDown();
