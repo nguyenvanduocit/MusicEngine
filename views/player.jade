@@ -11,11 +11,13 @@ head
 html
   body
     h1 Player
-    div#playListRegion
     div#playerRegion
     div#controlRegion
+    div#playListRegion
     script(type="text/template")#playlist-template.
         <ul></ul>
     script(type="text/template")#songItem-template.
         <li data-url={{=url}}>{{=name}} : {{=url}}</li>
+    script(type="text/template")#player-template.
+        <audio id="player" src="http://stream7.mp3.zdn.vn/fsfsdfdsfdserwrwq3/86fce6937be3b072b77a073b84282805/559d1b29/2015/01/20/4/c/4c991ce037abfcd0b877a45e6e98ef8a.mp3" preload="auto" controls></audio>
     script(src='/js/player.js')

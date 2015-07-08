@@ -16,7 +16,6 @@ require('./routes')(app, io);
  * Define some var
  */
 var maxUser = 100;
-var maxPlayer = 100;
 var songList = [];
 /**
  * On connection

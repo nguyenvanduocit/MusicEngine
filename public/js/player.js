@@ -15,6 +15,7 @@ MusicEngine = window.MusicEngine || new Application();
 		MusicEngine.Routers = MusicEngine.Routers || {};
 		// the pub/sub object for managing event throughout the app
 		MusicEngine.pubsub = MusicEngine.pubsub || {};
+		_.extend(MusicEngine.pubsub, Backbone.Events);
 
 		$( document ).ready( function () {
 			MusicEngine.on( 'start', function () {
@@ -41,10 +42,7 @@ MusicEngine = window.MusicEngine || new Application();
 	function ( $, Backbone, Marionate,socket, MusicEngine, Views, Models, Collections ) {
 
 		var roomId = Number(window.location.pathname.match(/\/player\/(\d+)$/)[1]);
-
-		var playListRegion = Marionate.Region.extend({
-		});
-
+		Models.Song = Backbone.Model.extend({});
 		Collections.Song = Backbone.Collection.extend({
 
 		});
@@ -56,14 +54,34 @@ MusicEngine = window.MusicEngine || new Application();
 		Views.Song  = Marionate.ItemView.extend({
 			template: "#songItem-template",
 		});
+		/**
+		 * Player
+		 */
+		var playerRegion = Marionate.Region.extend({
 
+		});
+		Views.Player = Marionette.ItemView.extend({
+			template:'#player-template',
+			initialize:function(options){
+				_.extend( this.options, options );
+				this.model = new Models.Song();
+				this.listenTo(MusicEngine.pubsub,'song.play', this.playSong);
+			},
+			playSong:function(song){
+				this.model.set(song);
+				var audioElement = document.createElement('audio');
+				audioElement.play();
+			}
+		});
+		/**
+		 * Playlist
+		 */
+		var playListRegion = Marionate.Region.extend({
+		});
 		Views.PlayList =  Marionette.CollectionView.extend({
 
 			template: "#playlist-template",
 			childView: Views.Song,
-			initialize:function(options){
-
-			},
 			onShow:function(){}
 		});
 
@@ -77,6 +95,7 @@ MusicEngine = window.MusicEngine || new Application();
 				this.playListView = new Views.PlayList({
 					collection:this.songCollection
 				});
+				this.playerView = new Views.Player();
 				this.initSocketEvent();
 				this.initRegion();
 				this.login();
@@ -87,19 +106,23 @@ MusicEngine = window.MusicEngine || new Application();
 				var that = this;
 
 				socket.on('player.login.result', function(data){
+					MusicEngine.pubsub.trigger('player.login.result', data);
 					that.loginHandler(data);
 				});
 				socket.on('playlist.songList', function(data){
+					MusicEngine.pubsub.trigger('playlist.songList', data);
 					that.songListHandler(data);
 				});
 				socket.on('song.add', function(data){
+					MusicEngine.pubsub.trigger('song.add', data);
 					that.onSongAdd(data);
 				});
 				socket.on('song.delete', function(data){
+					MusicEngine.pubsub.trigger('song.delete', data);
 					that.onSongDelete(data);
 				});
 				socket.on('song.play', function(data){
-					that.onPlaySong(data);
+					MusicEngine.pubsub.trigger('song.play', data);
 				});
 			},
 
@@ -114,14 +137,15 @@ MusicEngine = window.MusicEngine || new Application();
 					playListRegion: {
 						el: '#playListRegion',
 						regionClass: playListRegion
+					},
+					playerRegion: {
+						el: '#playerRegion',
+						regionClass: playerRegion
 					}
 				});
 			},
 			startPlay:function(){
 				socket.emit('song.nextSong');
-			},
-			onPlaySong:function(song){
-				console.log(song);
 			},
 			onSongAdd: function(song){
 				this.songCollection.add(song);
@@ -132,6 +156,7 @@ MusicEngine = window.MusicEngine || new Application();
 			songListHandler:function(songList){
 				this.songCollection.reset(songList);
 				MusicEngine.playListRegion.show(this.playListView);
+				MusicEngine.playerRegion.show(this.playerView);
 			},
 			loginHandler: function(data){
 				if(data.success){
