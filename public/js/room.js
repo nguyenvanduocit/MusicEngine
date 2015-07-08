@@ -103,13 +103,12 @@ $(function(){
 
 	socket.on('song.add', function(song){
 		showMessage('startChat');
-		createMessage(song.url, song.name, data.id);
+		createMessage(song.url, song.name, song.id);
 	});
 	socket.on('message.update', function(data){
 		updateMessage(data.msg, data.name, data.id);
 	});
 	socket.on('song.submit.result', function(data){
-		showMessage('startChat');
 		createMessage(data.msg, data.name, data.id);
 	});
 
@@ -143,21 +142,21 @@ $(function(){
 	function updateMessage(msg, title, id){
 		var $currentMessageEl = $('#' + id);
 		if($currentMessageEl.length >0){
-			$currentMessageEl.find('p').text(msg);
-			$currentMessageEl.find('b').text(title);
+			$currentMessageEl.find('p.content').text(msg);
+			$currentMessageEl.find('b.title').text(title);
 		}
 	}
 	function createMessage(msg,title, id){
 
 		var li = $(
 			'<li id="'+id+'" class="me">'+
-			'<b></b>' +
-			'<p></p>' +
+			'<b class="title"></b>' +
+			'<p class="content"></p>' +
 			'</li>');
 
 		// use the 'text' method to escape malicious user input
-		li.find('p').text(msg);
-		li.find('b').text(title);
+		li.find('p.content').text(msg);
+		li.find('b.title').text(title);
 		li.hide();
 		chats.prepend(li);
 		li.slideDown();
