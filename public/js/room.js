@@ -1,7 +1,6 @@
 // This file is executed in the browser, when people visit /chat/<random id>
 
 $(function(){
-
 	// getting the id of the room from the url
 	var id = Number(window.location.pathname.match(/\/room\/(\d+)$/)[1]);
 
@@ -57,7 +56,7 @@ $(function(){
 				}
 				showMessage("inviteSomebody");
 				// call the server-side function 'login' and send user's parameters
-				socket.emit('login', {roomname:'',user: name, id: id});
+				socket.emit('member.login', {roomname:'',user: name, id: id});
 			});
 		}
 
@@ -80,7 +79,7 @@ $(function(){
 					alert("There already is a \"" + name + "\" in this room!");
 					return;
 				}
-					socket.emit('login', {user: name, id: id});
+					socket.emit('member.login', {user: name, id: id});
 			});
 		}
 	});
@@ -103,13 +102,9 @@ $(function(){
 		}
 	});
 
-	socket.on('receive', function(data){
-
+	socket.on('song.add', function(song){
 		showMessage('startChat');
-
-		if(data.msg.trim().length) {
-			createChatMessage(data.msg, data.user);
-		}
+		createChatMessage(song.url, song.name);
 	});
 
 	textarea.keypress(function(e){

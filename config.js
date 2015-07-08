@@ -12,7 +12,6 @@ module.exports = function(app, express, http){
 	app.set( "port", port );
 	app.set( "views", __dirname + "/views" );
 	app.set( "view engine", "jade" );
-
 	app.use( express.static( "public", __dirname + "/public" ) );
 	app.use( '/components', express.static( __dirname + '/components' ) );
 	http.listen( app.get( "port" ), app.get( "ipaddr" ), function () {

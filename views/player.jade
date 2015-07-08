@@ -1,11 +1,21 @@
 doctype html
-html
-  head
+head
     link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans')
     link(rel='stylesheet', href='/css/style.css')
-    script(src='components/jquery/dist/jquery.min.js')
+    script(src='/components/jquery/dist/jquery.min.js')
+    script(src='/components/underscore/underscore-min.js')
+    script(src='/components/backbone/backbone-min.js')
+    script(src='/components/marionette/lib/backbone.marionette.min.js')
     script(src='/socket.io/socket.io.js')
-    script(src='/js/index.js')</b>
-    title MusicEngine
+    title Player
+html
   body
     h1 Player
+    div#playListRegion
+    div#playerRegion
+    div#controlRegion
+    script(type="text/template")#playlist-template.
+        <ul></ul>
+    script(type="text/template")#songItem-template.
+        <li data-url={{=url}}>{{=name}} : {{=url}}</li>
+    script(src='/js/player.js')

@@ -15,12 +15,14 @@ require('./routes')(app, io);
  * Define some var
  */
 var maxUser = 100;
+var maxPlayer = 100;
 var songList = [];
+var player = [];
 /**
  * On connection
  */
 var chat = io.on( 'connection', function ( socket ) {
-
+	console.log("Connected : " + socket.id);
 	socket.on('load',function(data){
 
 		var room = findClientsSocket(io,data);
@@ -44,12 +46,13 @@ var chat = io.on( 'connection', function ( socket ) {
 	});
 
 	// and add them to the room
-	socket.on('login', function(data) {
+	socket.on('member.login', function(data) {
 
 		var room = findClientsSocket(io, data.id);
 		if (room.length < maxUser) {
 			socket.username = data.user;
 			socket.room = data.id;
+			socket.type = 'member';
 
 			// Add the client to the room
 			socket.join(data.id);
@@ -61,22 +64,63 @@ var chat = io.on( 'connection', function ( socket ) {
 			socket.emit('tooMany', {boolean: true});
 		}
 	});
-	// Somebody left the chat
+	/**
+	 * Player login
+	 */
+	socket.on('player.login', function(data) {
+
+		if (player.length < maxPlayer) {
+			/**
+			 * Set the data for socket
+			 */
+			socket.name = data.name;
+			socket.room = data.roomId;
+			socket.type = 'player';
+			/**
+			 * Join this socket to the room
+			 */
+			socket.join(data.roomId);
+			/**
+			 * response the result for socket
+			 */
+			socket.emit('player.login.result', {success:true, msg:'Wellcome to the room #' + socket.room});
+			socket.emit('playlist.songList', songList);
+		}
+		else {
+			socket.emit('player.login.result', {success: false, msg:'The room is full of player'});
+		}
+	});
+	/**
+	 * On client disconnected
+	 */
 	socket.on('disconnect', function() {
 		// leave the room
 		socket.leave(socket.room);
+		if(socket.type === 'player'){
+			console.log('Player disconnected : ' + socket.id);
+		}else{
+			console.log('member disconnected : ' + socket.id);
+		}
 	});
 
 
 	// Handle the sending of messages
 	socket.on('msg', function(data){
-		songList.push(new Song(data.user, data.msg));
-		// When the server receives a message, it sends it to the other person in the room.
-		socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user});
+		var song = new Song(data.user, data.msg);
+		songList.push(song);
+		/**
+		 * Send the song to player
+		 */
+		socket.broadcast.to(socket.room).emit('song.add', song);
 	});
 
 } );
-
+/**
+ * @param io
+ * @param roomId
+ * @param namespace
+ * @returns {Array}
+ */
 function findClientsSocket(io,roomId, namespace) {
 	var res = [],
 		ns = io.of(namespace ||"/");    // the default namespace is "/"

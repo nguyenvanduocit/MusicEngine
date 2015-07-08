@@ -2,7 +2,7 @@ function Song(name, url) {
 	this.name = name;
 	this.url = url;
 	this.status = "pending";//playing//stoping
-	this.score = 0;
+	this.score = Math.floor((Math.random() * 10) + 1);
 };
 
 Song.prototype.voteUp = function() {
