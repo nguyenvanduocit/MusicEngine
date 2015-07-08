@@ -123,22 +123,26 @@ var chat = io.on( 'connection', function ( socket ) {
 		socket.emit('song.submit.result', {msg:'processing',id:msg_id, name:'System'});
 		request('http://lab.wordpresskite.com/getlink/?link='+data.url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				var data = JSON.parse(body);
-				var song = new Song();
-				song.set('id',msg_id);
-				song.set('url', data.location);
-				song.set('name', data.title);
-				songList.add(song);
-				/**
-				 * Update the processing message.
-				 */
-				socket.emit('message.update', {msg:song.get('url'),id:msg_id, name:song.get('name')});
-				/**
-				 * Send add song to another client.
-				 */
-				socket.broadcast.to(socket.room ).emit('song.add', song);
-				if(!isPlaying){
-					playNextSong();
+				try{
+					var data = JSON.parse(body);
+					var song = new Song();
+					song.set('id',msg_id);
+					song.set('url', data.location);
+					song.set('name', data.title);
+					songList.add(song);
+					/**
+					 * Update the processing message.
+					 */
+					socket.emit('message.update', {msg:song.get('url'),id:msg_id, name:song.get('name')});
+					/**
+					 * Send add song to another client.
+					 */
+					socket.broadcast.to(socket.room ).emit('song.add', song);
+					if(!isPlaying){
+						playNextSong();
+					}
+				}catch(e){
+					socket.emit('message.update', {msg:'This url is not vaild',id:msg_id, name:'error'});
 				}
 			}
 		})
