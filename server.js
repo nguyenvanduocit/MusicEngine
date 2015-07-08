@@ -119,7 +119,7 @@ var chat = io.on( 'connection', function ( socket ) {
 		})
 	});
 
-} );
+});
 
 /**
  * @param io
