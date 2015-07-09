@@ -107,6 +107,9 @@ var chat = io.on( 'connection', function ( socket ) {
 		};
 		socket.broadcast.to(socket.room ).emit('player.duration', durationInfo);
 	});
+	/**
+	 * On player finished the song
+	 */
 	socket.on('player.song.end', function(data){
 		var info  ={
 			songId:data.songId
@@ -117,27 +120,32 @@ var chat = io.on( 'connection', function ( socket ) {
 		playNextSong();
 	});
 
-	// Handle the sending of messages
+	/**
+	 * On user submit the song
+	 */
 	socket.on('song.submit', function(data){
 		var msg_id =uuid.v4();
+		/**
+		 * Response the status to sender that we processing the song
+		 */
 		socket.emit('song.submit.result', {msg:'processing',id:msg_id, name:'System'});
+		/**
+		 * Request the mp3 source
+		 */
 		request('http://lab.wordpresskite.com/getlink/?link='+data.url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				try{
 					var data = JSON.parse(body);
 					var song = new Song();
 					song.set('id',msg_id);
+					song.set('own',socket.name);
 					song.set('url', data.location);
 					song.set('name', data.title);
 					songList.add(song);
 					/**
-					 * Update the processing message.
+					 * Send add song result
 					 */
-					socket.emit('message.update', {msg:song.get('url'),id:msg_id, name:song.get('name')});
-					/**
-					 * Send add song to another client.
-					 */
-					socket.broadcast.to(socket.room ).emit('song.add', song);
+					io.in(socket.room).emit('song.add', song);
 					if(!isPlaying){
 						playNextSong();
 					}
@@ -147,6 +155,7 @@ var chat = io.on( 'connection', function ( socket ) {
 			}
 		})
 	});
+
 	function playNextSong(){
 		if(songList.length > 0){
 			isPlaying = true;

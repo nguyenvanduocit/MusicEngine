@@ -16,5 +16,6 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="MusicEngine node_modules" level="project" />
   </component>
 </module>

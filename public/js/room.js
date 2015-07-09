@@ -116,11 +116,7 @@ $(function(){
 
 	socket.on('song.add', function(song){
 		showMessage('startChat');
-		createMessage(song.url, song.name, song.id);
-	});
-	socket.on('message.update', function(data){
-		console.log(data);
-		updateMessage(data.msg, data.name, data.id);
+		createSongMessage(song.id, song.own, song.title);
 	});
 	socket.on('song.submit.result', function(data){
 		createMessage(data.msg, data.name, data.id);
@@ -158,28 +154,39 @@ $(function(){
 			$currentMessageEl.find('span.duration').text(duration);
 		}
 	}
-	// Function that creates a new chat message
-	function updateMessage(msg, title, id){
-		var $currentMessageEl = $('#' + id);
-		if($currentMessageEl.length >0){
-			$currentMessageEl.find('p.content').text(msg);
-			$currentMessageEl.find('b.title').text(title);
+	function getMessageEl(id){
+		var $findEl = $('#' + id);
+		if($findEl.length >0){
+			return $findEl;
+		}
+		else{
+			return null;
 		}
 	}
+	function createSongMessage(id, own, title){
+		createMessage(title, own, id);
+	}
 	function createMessage(msg,title, id){
+		var $messageEl = getMessageEl(id);
+		if($messageEl !==  null){
+			$messageEl.find('p.content').text(msg);
+			$messageEl.find('b.title').text(title);
+		}
+		else {
+			$messageEl = $(
+				'<li id="' + id + '" class="me">' +
+				'<div><b class="title"></b><span class="duration">__:__:__</span></div>' +
+				'<p class="content"></p>' +
+				'</li>' );
 
-		var li = $(
-			'<li id="'+id+'" class="me">'+
-			'<b class="title"></b><span class="duration">pending</span>' +
-			'<p class="content"></p>' +
-			'</li>');
+			// use the 'text' method to escape malicious user input
+			$messageEl.find( 'p.content' ).text( msg );
+			$messageEl.find( 'b.title' ).text( title );
+			$messageEl.hide();
+			chats.prepend( $messageEl );
+			$messageEl.slideDown();
+		}
 
-		// use the 'text' method to escape malicious user input
-		li.find('p.content').text(msg);
-		li.find('b.title').text(title);
-		li.hide();
-		chats.prepend(li);
-		li.slideDown();
 	}
 
 	function showMessage(status,data){
