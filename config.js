@@ -7,7 +7,7 @@
 // the app and io instances from the app.js file:
 
 module.exports = function(app, express, http){
-	var port = process.env.PORT || 8181;
+	var port = process.env.PORT || 8282;
 	app.set( "ipaddr", process.env.IPv4||"10.0.0.10" );
 	app.set( "port", port );
 	app.set( "views", __dirname + "/views" );

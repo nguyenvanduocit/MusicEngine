@@ -1,228 +1,188 @@
-// This file is executed in the browser, when people visit /chat/<random id>
+_.templateSettings = {
+	evaluate: /\<\#(.+?)\#\>/g,
+	interpolate: /\{\{=(.+?)\}\}/g,
+	escape: /\{\{-(.+?)\}\}/g
+};
+var socket = io();
+var Application = Backbone.Marionette.Application.extend( {} );
+MusicEngine = window.MusicEngine || new Application();
+(
+	function ( $, Backbone, Marionate, socket, MusicEngine ) {
 
-$(function(){
-	// getting the id of the room from the url
-	var id = Number(window.location.pathname.match(/\/room\/(\d+)$/)[1]);
+		MusicEngine.Models = MusicEngine.Models || {};
+		MusicEngine.Collections = MusicEngine.Collections || {};
+		MusicEngine.Views = MusicEngine.Views || {};
+		MusicEngine.Routers = MusicEngine.Routers || {};
+		// the pub/sub object for managing event throughout the app
+		MusicEngine.pubsub = MusicEngine.pubsub || {};
+		_.extend( MusicEngine.pubsub, Backbone.Events );
 
-	// connect to the socket
-	var socket = io();
-
-	// variables which hold the data for each person
-	var name = "";
-	// cache some jQuery objects
-	var section = $(".section"),
-		footer = $("footer"),
-		onConnect = $(".connected"),
-		inviteSomebody = $(".invite-textfield"),
-		personInside = $(".personinside"),
-		chatScreen = $(".chatscreen");
-	// some more jquery objects
-	var chatNickname = $(".nickname-chat"),
-		loginForm = $(".loginForm"),
-		yourName = $("#yourName"),
-		hisName = $("#hisName"),
-		chatForm = $("#chatform"),
-		textarea = $("#message"),
-		chats = $(".chats");
-
-
-	// on connection to server get the id of person's room
-	socket.on('connect', function(){
-		socket.emit('load', id);
-	});
-
-	socket.on('playlist.songList', function(songList){
-		for(var index = 0;index<songList.length; index++){
-			createMessage(songList[index].url, songList[index].name, songList[index].id);
-		}
-	});
-	// receive the names and avatars of all people in the chat room
-	socket.on('peopleinchat', function(data){
-
-		if(data.number === 0){
-
-			showMessage("connected");
-
-			loginForm.on('submit', function(e){
-
+		$( document ).ready( function () {
+			MusicEngine.roomId = Number( window.location.pathname.match( /\/room\/(\d+)$/ )[ 1 ] );
+			MusicEngine.on( 'start', function () {
+				Backbone.history.start();
+			} );
+			socket.on( 'connect', function () {
+				/**
+				 * TODO handler on reconnect event
+				 */
+				MusicEngine.start();
+			} );
+			socket.on( 'disconnect', function () {
+				console.log( 'You are disconnected' );
+			} );
+		} );
+	}
+)( jQuery, Backbone, Backbone.Marionette, socket, MusicEngine );
+/**
+ * Module
+ */
+(
+	function ( $, Backbone, Marionate, socket, MusicEngine, Views, Models, Collections ) {
+		Models.Song = Backbone.Model.extend( {} );
+		Collections.Song = Backbone.Collection.extend( {} );
+		Views.Song = Marionate.ItemView.extend( {
+			template: "#songItem-template",
+		} );
+		/**
+		 * Song submit Regon
+		 */
+		var songSubmitRegion = Marionate.Region.extend({});
+		Views.songSubmitView = Marionette.CompositeView.extend({
+			template: "#songsubmit-template",
+			events:{
+				'submit #songSubmitForm':'onSubmit'
+			},
+			initialize:function(options){
+				_.extend(this.options, options);
+			},
+			onSubmit:function(e){
 				e.preventDefault();
+				var $target = $( e.currentTarget);
+				var $urlInput = $target.find('input[name="url"]');
+				var url = $urlInput.val();
+				socket.emit('song.submit', {url:url});
+			}
+		});
+		/**
+		 * Login
+		 */
+		var loginRegion = Marionate.Region.extend({});
 
-				name = $.trim(yourName.val());
+		Views.LoginForm = Marionette.CompositeView.extend({
+			template: "#login-template",
+			events:{
+				'submit #loginForm':'onSubmit'
+			},
 
-				if(name.length < 1){
-					alert("Please enter a nick name longer than 1 character!");
-					return;
-				}
-				showMessage("inviteSomebody");
-				// call the server-side function 'login' and send user's parameters
-				socket.emit('member.login', {roomname:'',user: name, id: id});
-			});
-		}
-
-		else {
-
-			showMessage("personinchat",data);
-
-			loginForm.on('submit', function(e){
-
+			onSubmit:function(e){
 				e.preventDefault();
+				var $target = $( e.currentTarget);
 
-				name = $.trim(hisName.val());
+				var $userNameInput = $target.find('input[name="username"]');
+				var username = $userNameInput.val();
+				socket.emit('client.login', {username:username, room:MusicEngine.roomId});
+			}
 
-				if(name.length < 1){
-					alert("Please enter a nick name longer than 1 character!");
-					return;
+		});
+		/**
+		 * Playlist
+		 */
+		var playListRegion = Marionate.Region.extend( {} );
+		Views.PlayList = Marionette.CollectionView.extend( {
+			template: "#playlist-template",
+			childView: Views.Song,
+			onShow: function () {
+				socket.emit('playlist.fetch.result');
+			}
+		} );
+		/**
+		 * Define the module
+		 */
+		var RoomModule = Marionette.Module.extend( {
+			initialize: function ( options, moduleName, app ) {
+				_.extend( this.options, options );
+				this.songCollection = new Collections.Song();
+				this.playListView = new Views.PlayList( {
+					collection: this.songCollection
+				} );
+				this.loginView = new Views.LoginForm();
+				this.songSubmitView = new Views.songSubmitView();
+				this.initViewEvent();
+				this.initSocketEvent();
+				this.initRegion();
+			},
+			initViewEvent: function () {
+				this.listenTo(MusicEngine.pubsub, 'client.init.result', this.onInitResult);
+				this.listenTo(MusicEngine.pubsub, 'client.login.result', this.onLoginResult);
+			},
+			initSocketEvent: function () {
+				var self = this;
+				socket.on( 'client.init.result', function ( data ) {
+					self.onInitResult(data);
+					MusicEngine.pubsub.trigger('client.init.result', data);
+				} );
+
+				socket.on( 'client.login.result', function ( data ) {
+					MusicEngine.pubsub.trigger('client.login.result', data);
+				} );
+
+				socket.on( 'playlist.fetch.result', function ( data ) {
+					MusicEngine.pubsub.trigger('playlist.fetch.result', data);
+				} );
+
+				socket.on( 'song.submit.result', function ( data ) {
+					MusicEngine.pubsub.trigger('song.submit.result', data);
+				} );
+			},
+			onLoginResult:function(data){
+				if(data.success){
+					MusicEngine.loginRegion.empty();
+					MusicEngine.playListRegion.show(this.playListView);
+					MusicEngine.songSubmitRegion.show(this.songSubmitView);
 				}
-
-				if(name == data.user){
-					alert("There already is a \"" + name + "\" in this room!");
-					return;
+				else{
+					alert('Login is not successed');
 				}
-					socket.emit('member.login', {user: name, id: id});
-			});
-		}
-	});
+			},
+			onInitResult:function(data){
+				if(data.isAllowed){
+					/**
+					 * Login success
+					 */
+					MusicEngine.loginRegion.show(this.loginView);
+				}
+				else
+				{
+					alert('You are not allowed : ' + data.msg);
+				}
+			},
+			initRegion: function () {
+				MusicEngine.addRegions( {
+					playListRegion: {
+						el: '#playListRegion',
+						regionClass: playListRegion
+					},
+					loginRegion: {
+						el: '#loginRegion',
+						regionClass: loginRegion
+					},
+					songSubmitRegion: {
+						el: '#songSubmitRegion',
+						regionClass: songSubmitRegion
+					},
+				} );
+			},
+			onStart: function ( options ) {
+				socket.emit('client.init', {room:MusicEngine.roomId, type:'player'});
+			},
+			onStop: function ( options ) {
 
-	// Other useful
-
-	socket.on('login.result', function(data){
-		console.log(data);
-		if(data.success && data.id == id) {
-			showMessage("startChat",data);
-		}
-	});
-
-
-	socket.on('tooMany', function(data){
-
-		if(data.boolean && name.length === 0) {
-
-			showMessage('tooManyPeople');
-		}
-	});
-
-	socket.on('player.duration', function(durationInfo){
-		console.log(durationInfo);
-		updateDuration(durationInfo.songId, durationInfo.duration);
-	});
-	socket.on('player.song.end', function(data){
-		updateDuration(data.songId, 'Finished');
-	});
-
-	socket.on('song.remove', function(data){
-		var $currentMessageEl = $('#' + data.songId);
-		$currentMessageEl.remove();
-	});
-
-	socket.on('song.add', function(song){
-		showMessage('startChat');
-		createSongMessage(song.id, song.own, song.title);
-	});
-	socket.on('song.submit.result', function(data){
-		createMessage(data.msg, data.name, data.id);
-	});
-
-	textarea.keypress(function(e){
-
-		// Submit the form on enter
-
-		if(e.which == 13) {
-			e.preventDefault();
-			chatForm.trigger('submit');
-		}
-
-	});
-
-	chatForm.on('submit', function(e){
-		e.preventDefault();
-		// Create a new chat message and display it directly
-		showMessage("startChat");
-		if(textarea.val().trim().length) {
-			// Send the message to the other person in the chat
-			socket.emit('song.submit', {url: textarea.val(), user: name});
-		}
-		// Empty the textarea
-		textarea.val("");
-	});
-	// Somebody left the chat
-	socket.on('disconnect', function(data) {
-		showMessage('disconnect', data);
-	});
-	function updateDuration(id, duration){
-		var $currentMessageEl = $('#' + id);
-		if($currentMessageEl.length >0){
-			$currentMessageEl.find('span.duration').text(duration);
-		}
+			}
+		} );
+		/**
+		 * Register the module with application
+		 */
+		MusicEngine.module( "RoomModule", RoomModule );
 	}
-	function getMessageEl(id){
-		var $findEl = $('#' + id);
-		if($findEl.length >0){
-			return $findEl;
-		}
-		else{
-			return null;
-		}
-	}
-	function createSongMessage(id, own, title){
-		createMessage(title, own, id);
-	}
-	function createMessage(msg,title, id){
-		var $messageEl = getMessageEl(id);
-		if($messageEl !==  null){
-			$messageEl.find('p.content').text(msg);
-			$messageEl.find('b.title').text(title);
-		}
-		else {
-			$messageEl = $(
-				'<li id="' + id + '" class="me">' +
-				'<div><b class="title"></b><span class="duration">__:__:__</span></div>' +
-				'<p class="content"></p>' +
-				'</li>' );
-
-			// use the 'text' method to escape malicious user input
-			$messageEl.find( 'p.content' ).text( msg );
-			$messageEl.find( 'b.title' ).text( title );
-			$messageEl.hide();
-			chats.prepend( $messageEl );
-			$messageEl.slideDown();
-		}
-
-	}
-
-	function showMessage(status,data){
-
-		if(status === "connected"){
-
-			section.children().css('display', 'none');
-			onConnect.fadeIn(1200);
-		}
-
-		else if(status === "inviteSomebody"){
-
-			// Set the invite link content
-			$("#link").text(window.location.href);
-
-			onConnect.fadeOut(1200, function(){
-				inviteSomebody.fadeIn(1200);
-			});
-		}
-
-		else if(status === "personinchat"){
-
-			onConnect.css("display", "none");
-			personInside.fadeIn(1200);
-			chatNickname.text(data.user);
-		}
-
-		else if(status === "startChat") {
-			inviteSomebody.fadeOut(1200);
-			personInside.fadeOut(1000);
-			footer.fadeIn(1200);
-			chatScreen.fadeIn(1200);
-		}
-		else if(status ==='disconnect'){
-			location.reload();
-		}
-	}
-
-});
+)( jQuery, Backbone, Backbone.Marionette, socket, MusicEngine, MusicEngine.Views, MusicEngine.Models, MusicEngine.Collections );

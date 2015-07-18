@@ -6,193 +6,133 @@ var npid = require( "npid" );
 var uuid = require( 'node-uuid' );
 var _ = require( 'underscore' )._;
 var backbone = require( 'backbone' );
-var request = require('request');
+var request = require( 'request' );
 /**
  * Rounting
  */
-require('./config')(app, express, http);
-require('./routes')(app, io);
-/**
- * Define some var
- */
-var maxUser = 100;
-var songList = new backbone.Collection();
-var Song = backbone.Model.extend();
-var isPlaying = false;
-/**
- * On connection
- */
-var chat = io.on( 'connection', function ( socket ) {
-	console.log("Connected : " + socket.id);
-	socket.on('load',function(data){
+require( './config' )( app, express, http );
+require( './routes' )( app, io );
 
-		var room = findClientsSocket(io,data);
-		if(room.length === 0 ) {
+var MusicEngineApplication = {};
 
-			socket.emit('peopleinchat', {number: 0});
-		}
-		else if(room.length < maxUser) {
+MusicEngineApplication = _.extend(MusicEngineApplication,{
+	render:function(){
 
-			socket.emit('peopleinchat', {
-				number: room.length,
-				user: room[0].username,
-				id: data
-			});
-			socket.emit('playlist.songList', songList);
-		}
-		else if(room.length >= maxUser) {
+	},
+	initialize: function() {
+		this.Models = {};
+		this.Collections = {};
+		this.pubsub = {};
+		_.extend(this.pubsub, backbone.Events);
 
-			chat.emit('tooMany', {boolean: true});
-		}
-	});
-
-	// and add them to the room
-	socket.on('member.login', function(data) {
-
-		var room = findClientsSocket(io, data.id);
-		if (room.length < maxUser) {
-			socket.username = data.user;
-			socket.room = data.id;
-			socket.type = 'member';
-
-			// Add the client to the room
-			socket.join(data.id);
-			// Send the startChat event to all the people in the
-			// room, along with a list of people that are in it.
-			chat.in(data.id).emit('login.result', {success:true,id: data.id});
-		}
-		else {
-			socket.emit('tooMany', {boolean: true});
-		}
-	});
-	/**
-	 * Player login
-	 */
-	socket.on('player.login', function(data) {
-		/**
-		 * Set the data for socket
-		 */
-		socket.name = data.name;
-		socket.room = data.roomId;
-		socket.type = 'player';
-		/**
-		 * Join this socket to the room
-		 */
-		socket.join(data.roomId);
-		/**
-		 * response the result for socket
-		 */
-		socket.emit('player.login.result', {success:true, msg:'Wellcome to the room #' + socket.room});
-		socket.emit('playlist.songList', songList);
-	});
-	socket.on('song.nextSong', playNextSong);
-
-	/**
-	 * On client disconnected
-	 */
-	socket.on('disconnect', function() {
-		if(socket.type ==='player'){
-			socket.broadcast.to(socket.room ).emit('player.stop');
-		}
-		socket.leave(socket.room);
-		console.log('Disconnected : ' + socket.id);
-	});
-	/**
-	 * Player event
-	 */
-	socket.on('player.duration', function(data){
-		var durationInfo = {
-			duration:data.duration,
-			songId:data.songId
-		};
-		socket.broadcast.to(socket.room ).emit('player.duration', durationInfo);
-	});
-	/**
-	 * On player finished the song
-	 */
-	socket.on('player.song.end', function(data){
-		var info  ={
-			songId:data.songId
-		};
-		songList.remove(data.songId);
-		socket.broadcast.to(socket.room ).emit('player.song.end', info);
-		io.in(socket.room).emit('song.remove', info);
-		playNextSong();
-	});
-
-	/**
-	 * On user submit the song
-	 */
-	socket.on('song.submit', function(data){
-		var msg_id =uuid.v4();
-		/**
-		 * Response the status to sender that we processing the song
-		 */
-		socket.emit('song.submit.result', {msg:'processing',id:msg_id, name:'System'});
-		/**
-		 * Request the mp3 source
-		 */
-		request('http://lab.wordpresskite.com/getlink/?link='+data.url, function (error, response, body) {
-			if (!error && response.statusCode == 200) {
-				try{
-					var data = JSON.parse(body);
-					var song = new Song();
-					song.set('id',msg_id);
-					song.set('own',socket.name);
-					song.set('url', data.location);
-					song.set('name', data.title);
-					songList.add(song);
-					/**
-					 * Send add song result
-					 */
-					io.in(socket.room).emit('song.add', song);
-					if(!isPlaying){
-						playNextSong();
-					}
-				}catch(e){
-					socket.emit('message.update', {msg:'This url is not vaild',id:msg_id, name:'error'});
-				}
+		this.maxUser = 100;
+		this.isPlaying = false;
+		this.Collections.Song = backbone.Collection.extend({});
+		this.Models.Song = backbone.Model.extend({
+			defaults: {
+				'own': 'un-own',
+				'url': 'un-url',
+				'name': 'un-name',
+				'score': 0
 			}
-		})
-	});
+		});
+		this.listenTo(this.Collections.Song, 'add', this.onSongAdded);
+	},
+	run : function(){
+		var self = this;
+		this.io = io.on( 'connection',function(socket) {
+			self.onClientConnect(socket);
+		});
+	},
+	onSongAdded: function(){
 
-	function playNextSong(){
-		if(songList.length > 0){
-			isPlaying = true;
-			var nextSong = songList.at(Math.floor(Math.random()*songList.length));
-			io.in(socket.room).emit('song.play', nextSong);
+	},
+	/**
+	 * On the first time client connecto to server
+	 * @param data
+	 * @param socket
+	 */
+	onClientInit:function(data, socket){
+		console.log(socket.id + " : INIT " + data.type + " want to join room # " + data.room);
+		/**
+		 * TODO calc total client count
+		 */
+		if(1 < this.maxUser){
+			socket.emit( 'client.init.result', {isAllowed: true});
 		}
 		else
 		{
-			isPlaying = false;
-			io.in(socket.room).emit('song.nomore', {msg:'No more song to play'});
+			socket.emit( 'client.init.result', {isAllowed: false, msg:'The room is full.'});
 		}
-	}
+	},
+	onClientLogin:function(data, socket){
+		console.log(socket.id + " : LOGIN");
+		socket.username = data.username;
+		/**
+		 * TODO : We allow this socket int onClientInit, so let check to sync the condition
+		 */
+		socket.room = data.room;
+		socket.type = data.type;
+		socket.join( socket.room );
+		socket.emit( 'client.login.result', {success: true});
+		socket.broadcast.to( socket.room ).emit( 'client.connect', data );
+	},
+	onClientDisconnect: function(socket){
+		if ( socket.type === 'player' ) {
+			socket.broadcast.to( socket.room ).emit( 'player.stop' );
+		}
+		socket.leave( socket.room );
+		console.log( 'Disconnected : ' + socket.id );
+	},
+	onFetchPlaylist:function(socket){
+		socket.emit('playlist.fetch.result', this.Collections.Song.toJSON());
+	},
+	onSubmitSong: function (data, socket){
+		var song_id =uuid.v4();
+		var song = new Song();
+		song.set('id',song_id);
+		song.set('own',socket.name);
+		song.set('url', '');
+		song.set('name', '');
+		song.set('status', 'processing');
+		song.set('score', 0);
+		/**
+		 * Response the status to sender that we processing the song
+		 */
+		socket.emit('song.submit.result', song.toJSON());
+
+
+	},
+	/**
+	 *
+	 * @param socket
+	 */
+	onClientConnect : function(socket){
+
+		var self = this;
+		console.log(socket.id + " : CONNECTED");
+
+		socket.on( 'client.init',function(data){
+			self.onClientInit(data, socket);
+		});
+
+		socket.on( 'client.login',function(data){
+			self.onClientLogin(data, socket);
+		});
+
+		socket.on( 'disconnect', function () {
+			self.onClientDisconnect(socket);
+		} );
+
+		socket.on('playlist.fetch', function(){
+			self.onFetchPlaylist(socket);
+		});
+
+		socket.on('song.submit', function(data){
+			self.onSubmitSong(data, socket);
+		});
+	},
 
 });
-
-/**
- * @param io
- * @param roomId
- * @param namespace
- * @returns {Array}
- */
-function findClientsSocket(io,roomId, namespace) {
-	var res = [],
-		ns = io.of(namespace ||"/");    // the default namespace is "/"
-
-	if (ns) {
-		for (var id in ns.connected) {
-			if(roomId) {
-				var index = ns.connected[id].rooms.indexOf(roomId) ;
-				if(index !== -1) {
-					res.push(ns.connected[id]);
-				}
-			}
-			else {
-				res.push(ns.connected[id]);
-			}
-		}
-	}
-	return res;
-}
+MusicEngineApplication.initialize();
+MusicEngineApplication.run();
