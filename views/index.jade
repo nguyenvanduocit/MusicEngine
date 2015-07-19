@@ -13,14 +13,17 @@ html
     script(src='/components/backbone/backbone-min.js')
     script(src='/components/marionette/lib/backbone.marionette.min.js')
     script(src='/socket.io/socket.io.js')
-    script(src='/js/define.js')
     title MusicEngine
   body
     include index-header
     main
       #index-banner.section.no-pad-bot
         .container
-          h1.header.center MUSIC ROOM
+          h1.header.center MUSIC ENGINE
+          .row.center
+            h4.header.col.s12.light.center The player for team, Blend your office with all music
+          .row.center
+            a#download-button.btn-large.waves-effect.waves-light(href='/room') Get Started
           .row.center
             a.red-text.text-lighten-4(href='https://github.com/Dogfalo/materialize') alpha release v0.97.0
           br
@@ -34,16 +37,37 @@ html
       .container
         .section
           .row
+            .col.s12.m8.offset-m2
+              br
+              img#responsive-img(src='/images/responsive.png')
+          .row
+            h3.col.s12.light.center.header MusicEngine help to connect people with one speaker.
             div#loginRegion
-            div.col.s6
-              div#currentPlayingRegion
-              div#playListRegion
-            div.col.s6
-              div#songSubmitRegion
-              div#controlerRegion
-              div#messageRegion
+            div#songSubmitRegion
+            div#controlerRegion
+            div#messageRegion
+            div#playListRegion
+          // Promo Section
+          .row
+            .col.s12.m4
+              .center.promo
+                i.material-icons flash_on
+                p.promo-caption Song submition
+                p.light.center
+                  | All member in team can create account then they can submit the song for team's playlist
+            .col.s12.m4
+              .center.promo
+                i.material-icons group
+                p.promo-caption Vote
+                p.light.center
+                  | All member can vote for the action to the song, may  skip the bad song
+            .col.s12.m4
+              .center.promo
+                i.material-icons settings
+                p.promo-caption Easy to setup
+                p.light.center
+                  | The only one thing you have to do is access the room's page, the input your name, and then you can submit the song for all team
     include footer
-    include template/currentPlaying
     script(type="text/template")#login-template.
       <form id="loginForm">
         <label for="loginForm_userName">Username</label>
@@ -51,30 +75,24 @@ html
         <input type="submit">
       </form>
     script(type="text/template")#songsubmit-template.
-      <h3 class="light header">Search the song in mp3.zing.vn</h3>
       <form id="songSubmitForm">
-        <div class="input-field">
-          <input name="url" id="songSubmitForm_url" type="text" class="validate">
-          <label for="songSubmitForm_url">Song's URL</label>
-        </div>
-        <input class="btn waves-effect waves-light" type="submit">
+      <label for="songSubmitForm_url">url</label>
+      <input name="url" id="songSubmitForm_url">
+      <input type="submit">
       </form>
-
-    include template/playlist
-
+    script(type="text/template")#playlist-template.
+      <ul></ul>
     script(type="text/template")#messageList-template.
       <ul></ul>
-
     script(type="text/template")#messageItem-template.
-      <div id={{=id}}>{{=username}} : {{=msg}}</div>
-
+      <li id={{=id}}>{{=username}} : {{=msg}}</li>
+    script(type="text/template")#songItem-template.
+      <li id={{=id}}>{{=own}} : {{=name}}<i class="status"></i><i class="duration"></i></li>
     script(type="text/template")#listViewEmpty-template.
       <strong>There are no item on the list</strong>
-
     script(type="text/template")#controler-template.
+      <label for="volume_control">Volume</label>
       <input readonly type="range" min="0" max="1" name="volume" step=".1" id="volume_control"/>
-
     script(src='/js/materialize.js')
     script(src='/js/jquery.timeago.min.js')
     script(src='/js/init.js')
-    script(src='/js/room.js')

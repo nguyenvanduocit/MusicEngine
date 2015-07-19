@@ -1,23 +1,26 @@
 doctype html
-head
-    link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans')
-    link(rel='stylesheet', href='/css/style.css')
-    script(src='/components/jquery/dist/jquery.min.js')
-    script(src='/components/underscore/underscore-min.js')
-    script(src='/components/backbone/backbone-min.js')
-    script(src='/components/marionette/lib/backbone.marionette.min.js')
-    script(src='/socket.io/socket.io.js')
-    title Player
 html
-  body
-    h1 Player
-    div#playerRegion
-    div#controlRegion
-    div#playListRegion
-    script(type="text/template")#playlist-template.
-        <ul></ul>
-    script(type="text/template")#songItem-template.
-        <li data-url={{=url}}>{{=name}} : {{=url}}</li>
-    script(type="text/template")#player-template.
-        <audio id="player" preload="auto" controls></audio>
-    script(src='/js/player.js')
+    head
+        link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans Condensed:300italic,300,700')
+        script(src='/components/moment/moment.js')
+        script(src='/components/jquery/dist/jquery.min.js')
+        script(src='/components/underscore/underscore-min.js')
+        script(src='/components/backbone/backbone-min.js')
+        script(src='/components/marionette/lib/backbone.marionette.min.js')
+        script(src='/socket.io/socket.io.js')
+        title MusicEngine
+    body
+        div#playerRegion
+        div#messageRegion
+        div#playListRegion
+        include template/playlist
+        script(type="text/template")#messageList-template.
+            <ul></ul>
+        script(type="text/template")#messageItem-template.
+            <li id={{=id}}>{{=username}} : {{=msg}}</li>
+        script(type="text/template")#player-template.
+            <audio id="player" preload="auto" controls></audio>
+        script(type="text/template")#listViewEmpty-template.
+            <strong>There are no item on the list</strong>
+        script(src='/js/define.js')
+        script(src='/js/player.js')
