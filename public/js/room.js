@@ -20,6 +20,7 @@
 				this.containerEl = null;
 				this.currentEl = null;
 				this.titleEl = null;
+				this.voteCountEl = null;
 				this.backgroundEl = null;
 				this.currentStage = 'noplayer'; //playing | noplayer | nosong
 				this.listenTo( MusicEngine.pubsub, 'song.playing', this.onSongPlaying );
@@ -35,7 +36,6 @@
 				socket.emit( 'vote', {action: 'next'} );
 			},
 			onVoteChange: function ( data ) {
-
 			},
 			onPlayerPlay: function ( data ) {
 				this.updateView( 'playing' );
@@ -48,6 +48,7 @@
 				this.currentEl = this.$el.find( '#currentPlaying' );
 				this.durationEl = this.currentEl.find( '.duration' );
 				this.titleEl = this.currentEl.find( '.title' );
+				this.voteCountEl = this.currentEl.find( '.voteCount' );
 				this.backgroundEl = this.currentEl.find( '.backgroundImage' );
 			},
 			onPlayerDisconnect:function(){

@@ -89,6 +89,7 @@ var MusicEngineApplication = {
 			room.set( 'currentSongId', nextSong.get( 'id' ) );
 			io.sockets.to( roomId ).emit( 'player.play', nextSong.toJSON() );
 			room.set( 'isPlaying', true );
+			room.set( 'voteNext', 0 );
 			return true;
 		}
 		else {
@@ -321,7 +322,7 @@ var MusicEngineApplication = {
 					/**
 					 * Reach max vote, go to next song and reset vote
 					 */
-					room.set( 'voteNext', 0 );
+					room.set( 'voteNext', 0 ); //already Set on playNextSong
 					var currentSongId = room.get( 'currentSongId' );
 					if ( currentSongId != 0 ) {
 						this.removeSong( currentSongId, socket.room );
