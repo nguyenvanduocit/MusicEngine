@@ -6,6 +6,7 @@ html
     link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Inconsolata')
     link(rel='stylesheet', href='http://fonts.googleapis.com/icon?family=Material+Icons')
     link(href="/css/materialize.css",rel="stylesheet",media="screen,projection")
+    link(href="/css/style.css",rel="stylesheet",media="screen,projection")
     meta(name="theme-color", content="#EE6E73")
     script(src='/components/moment/moment.js')
     script(src='/components/jquery/dist/jquery.min.js')
@@ -53,11 +54,17 @@ html
     script(type="text/template")#songsubmit-template.
       <h3 class="light header">Search the song in mp3.zing.vn</h3>
       <form id="songSubmitForm">
-        <div class="input-field">
-          <input name="url" id="songSubmitForm_url" type="text" class="validate">
-          <label for="songSubmitForm_url">Song's URL</label>
+        <div class="row">
+          <div class="col s8">
+            <div class="input-field">
+              <input name="url" id="songSubmitForm_url" type="text" class="validate">
+              <label for="songSubmitForm_url">Song's URL</label>
+            </div>
+          </div>
+          <div class="col s4">
+            <button class="waves-effect waves-light btn-large" type="submit">Submit</button>
+          </div>
         </div>
-        <input class="btn waves-effect waves-light" type="submit">
       </form>
 
     include template/playlist
@@ -72,7 +79,7 @@ html
       <strong>There are no item on the list</strong>
 
     script(type="text/template")#controler-template.
-      <input readonly type="range" min="0" max="1" name="volume" step=".1" id="volume_control"/>
+      <input type="range" min="0" max="1" name="volume" step=".1" id="volume_control"/>
 
     script(src='/js/materialize.js')
     script(src='/js/jquery.timeago.min.js')

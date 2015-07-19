@@ -69,6 +69,9 @@ MusicEngine = window.MusicEngine || new Application();
 				this.render();
 			}
 		} );
+		Views.ListViewEmpty = Marionette.ItemView.extend({
+			template: "#listViewEmpty-template"
+		});
 		Views.PlayList = Marionette.CollectionView.extend( {
 			tagName:'ul',
 			className:'collection',
@@ -95,10 +98,13 @@ MusicEngine = window.MusicEngine || new Application();
 			tagName:'ul',
 			className:'collection',
 			childView: Views.MessageItem,
-			onShow: function () {}
+			onShow: function () {
+
+			},
+			appendHtml: function(collectionView, itemView, index){
+				collectionView.$el.prepend(itemView.el);
+			}
+
 		} );
-		Views.ListViewEmpty = Marionette.ItemView.extend({
-			template: "#listViewEmpty-template"
-		});
 	}
 )( jQuery, Backbone, Backbone.Marionette, socket, MusicEngine, MusicEngine.Views, MusicEngine.Models, MusicEngine.Collections );

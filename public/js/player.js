@@ -20,7 +20,7 @@
 				'ended audio#player': 'onEnd'
 			},
 			onShow: function () {
-				socket.emit( 'player.stage', {stage: 'firstLoad'} );
+				socket.emit( 'player.stage', {stage: 'firstLoad', volume:this.player.volume} );
 			},
 			template: '#player-template',
 			initialize: function ( options ) {
@@ -29,6 +29,8 @@
 				this.player = null;
 				this.currentDuration = '';
 				this.listenTo( MusicEngine.pubsub, 'player.play', this.onPlaySong );
+				this.listenTo( MusicEngine.pubsub, 'playlist.empty', this.onPlaylistEmpty );
+				this.listenTo( MusicEngine.pubsub, 'player.control.volume', this.onChangeVolumeRequest );
 			},
 			onSongEnd: function ( e ) {
 				socket.emit( 'player.stage', {
@@ -69,6 +71,14 @@
 					volume: this.player.volume
 				} );
 			},
+			onChangeVolumeRequest:function(data){
+				try{
+					this.player.volume = data.value;
+				}
+				catch(e){
+					console.log(e);
+				}
+			},
 			onRender: function () {
 				var self = this;
 				var player = this.$el.find( '#player' ).first();
@@ -96,6 +106,10 @@
 				} catch ( e ) {
 					console.log( e.message );
 				}
+			},
+			onPlaylistEmpty:function(data){
+				this.model.clear();
+				this.player.src = '';
 			}
 		} );
 		/**
@@ -161,6 +175,12 @@
 				socket.on( 'player.stop', function ( song ) {
 					MusicEngine.pubsub.trigger( 'player.stop', song );
 				} );
+				socket.on( 'playlist.empty', function ( data ) {
+					MusicEngine.pubsub.trigger( 'playlist.empty', data );
+				} );
+				socket.on( 'player.control.volume', function ( data ) {
+					MusicEngine.pubsub.trigger( 'player.control.volume', data );
+				} );
 			},
 			onDisconnect: function () {
 				console.log( 'Your are disconnected' );
@@ -221,7 +241,7 @@
 					/**
 					 * Login success
 					 */
-					socket.emit( 'client.login', {username: 'player', room: MusicEngine.roomId} );
+					socket.emit( 'client.login', {username: 'player',type:'player', room: MusicEngine.roomId} );
 				}
 				else {
 					alert( 'You are not allowed : ' + data.msg );

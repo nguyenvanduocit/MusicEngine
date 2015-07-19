@@ -1,4 +1,3 @@
-
 /**
  * Module
  */
@@ -7,111 +6,143 @@
 		/**
 		 * Current playin
 		 */
-		var currentPlayingRegion = Marionate.Region.extend({});
-		Views.currentPlayingView = Marionette.CompositeView.extend({
+		var currentPlayingRegion = Marionate.Region.extend( {} );
+		Views.currentPlayingView = Marionette.CompositeView.extend( {
 			template: "#currentPlaying-template",
-			events:{
-				'click .vote':'onVoteRequest'
+			events: {
+				'click .vote': 'onVoteRequest'
 			},
-			initialize:function(options){
-				_.extend(this.options, options);
+			initialize: function ( options ) {
+				_.extend( this.options, options );
 
 				this.currentSongId = 0;
 				this.durationEl = null;
+				this.containerEl = null;
 				this.currentEl = null;
 				this.titleEl = null;
 				this.backgroundEl = null;
-
-				this.listenTo(MusicEngine.pubsub, 'song.playing', this.onSongPlaying);
-				this.listenTo(MusicEngine.pubsub, 'song.pause', this.onSongPaused);
-				this.listenTo(MusicEngine.pubsub, 'vote.change', this.onVoteChange);
+				this.currentStage = 'noplayer'; //playing | noplayer | nosong
+				this.listenTo( MusicEngine.pubsub, 'song.playing', this.onSongPlaying );
+				this.listenTo( MusicEngine.pubsub, 'song.pause', this.onSongPaused );
+				this.listenTo( MusicEngine.pubsub, 'vote.change', this.onVoteChange );
+				this.listenTo( MusicEngine.pubsub, 'player.play', this.onPlayerPlay );
+				this.listenTo( MusicEngine.pubsub, 'player.connect', this.onPlayerConnect );
+				this.listenTo( MusicEngine.pubsub, 'player.disconnect', this.onPlayerDisconnect );
+				this.listenTo( MusicEngine.pubsub, 'playlist.empty', this.onPlaylistEmpty );
 			},
-			onVoteRequest:function(e){
+			onVoteRequest: function ( e ) {
 				e.preventDefault();
-				socket.emit('vote', {action:'next'});
+				socket.emit( 'vote', {action: 'next'} );
 			},
-			onVoteChange:function(data){
+			onVoteChange: function ( data ) {
 
 			},
-			onRender:function(){
-				this.currentEl = this.$el.find('#currentPlaying');
-				this.durationEl = this.currentEl.find('.duration');
-				this.titleEl = this.currentEl.find('.title');
-				this.backgroundEl = this.currentEl.find('.backgroundImage');
+			onPlayerPlay: function ( data ) {
+				this.updateView( 'play' );
 			},
-			onSongPlaying: function(data){
-				this.updateInfo(data);
+			onPlaylistEmpty: function ( data ) {
+				this.updateView( 'nosong' );
 			},
-			onSongPaused:function(data){
-				this.updateInfo(data);
+			onRender: function () {
+				this.containerEl = this.$el.find( '#currentPlayingContainer' );
+				this.currentEl = this.$el.find( '#currentPlaying' );
+				this.durationEl = this.currentEl.find( '.duration' );
+				this.titleEl = this.currentEl.find( '.title' );
+				this.backgroundEl = this.currentEl.find( '.backgroundImage' );
 			},
-			updateInfo:function(data){
-				if(this.currentSongId != data.song.id){
+			onPlayerDisconnect:function(){
+				this.updateView( 'noplayer' );
+			},
+			onPlayerConnect:function(){
+				this.updateView( 'playerconnected' );
+			},
+			onSongPlaying: function ( data ) {
+				this.updateInfo( data );
+			},
+			onSongPaused: function ( data ) {
+			},
+			updateView: function ( stage ) {
+				if ( this.currentStage != stage ) {
+					this.currentStage = stage;
+					this.containerEl.attr('class', stage);
+				}
+			},
+			updateInfo: function ( data ) {
+				this.updateView( 'playing' );
+				if ( this.currentSongId != data.song.id ) {
 					this.currentSongId = data.song.id;
-					this.titleEl.text(data.song.name);
-					this.backgroundEl.attr('src',data.song.image);
+					this.titleEl.text( data.song.name );
+					this.backgroundEl.attr( 'src', data.song.image );
 				}
-				if(this.durationEl){
-					this.durationEl.text(data.duration);
+				if ( this.durationEl ) {
+					this.durationEl.text( data.duration );
 				}
 			},
-		});
+		} );
 		/**
 		 * Song submit Regon
 		 */
-		var songSubmitRegion = Marionate.Region.extend({});
-		Views.songSubmitView = Marionette.CompositeView.extend({
+		var songSubmitRegion = Marionate.Region.extend( {} );
+		Views.songSubmitView = Marionette.CompositeView.extend( {
 			template: "#songsubmit-template",
-			events:{
-				'submit #songSubmitForm':'onSubmit'
+			events: {
+				'submit #songSubmitForm': 'onSubmit'
 			},
-			initialize:function(options){
-				_.extend(this.options, options);
+			initialize: function ( options ) {
+				_.extend( this.options, options );
 			},
-			onSubmit:function(e){
+			onSubmit: function ( e ) {
 				e.preventDefault();
-				var $target = $( e.currentTarget);
-				var $urlInput = $target.find('input[name="url"]');
+				var $target = $( e.currentTarget );
+				var $urlInput = $target.find( 'input[name="url"]' );
 				var url = $urlInput.val();
-				$urlInput.val('');
-				socket.emit('song.submit', {url:url});
+				$urlInput.val( '' );
+				socket.emit( 'song.submit', {url: url} );
 			}
-		});
-		var controlerRegion = Marionate.Region.extend({});
+		} );
+		var controlerRegion = Marionate.Region.extend( {} );
 
-		Views.ControlerView = Marionette.CompositeView.extend({
+		Views.ControlerView = Marionette.CompositeView.extend( {
 			template: "#controler-template",
+			events:{
+				'change #volume_control':'onChangeVolume'
+			},
 			onRender: function () {
-				this.volumeControl = this.$el.find('#volume_control');
+				this.volumeControl = this.$el.find( '#volume_control' );
 			},
-			initialize : function(){
-				this.listenTo(MusicEngine.pubsub, 'player.volumeChange', this.onVolumeChanged);
+			initialize: function () {
+				this.listenTo( MusicEngine.pubsub, 'player.volumeChange', this.onVolumeChanged );
 			},
-			onVolumeChanged:function(data){
-				this.volumeControl.val(data.volume);
+			onVolumeChanged: function ( data ) {
+				this.volumeControl.val( data.volume );
 			},
-		});
+			onChangeVolume:function(e){
+				var val = $(e.currentTarget).val();
+				console.log(val);
+				socket.emit('vote', {action:'volume',value:val});
+			}
+		} );
 		/**
 		 * Login
 		 */
-		var loginRegion = Marionate.Region.extend({});
+		var loginRegion = Marionate.Region.extend( {} );
 
-		Views.LoginForm = Marionette.CompositeView.extend({
+		Views.LoginForm = Marionette.CompositeView.extend( {
 			template: "#login-template",
-			events:{
-				'submit #loginForm':'onSubmit'
+			events: {
+				'submit #loginForm': 'onSubmit'
 			},
 
-			onSubmit:function(e){
+			onSubmit: function ( e ) {
 				e.preventDefault();
-				var $target = $( e.currentTarget);
+				var $target = $( e.currentTarget );
 
-				var $userNameInput = $target.find('input[name="username"]');
+				var $userNameInput = $target.find( 'input[name="username"]' );
 				var username = $userNameInput.val();
-				socket.emit('client.login', {username:username, room:MusicEngine.roomId});
+				socket.emit( 'client.login', {username: username, room: MusicEngine.roomId} );
 			}
 
-		});
+		} );
 		/**
 		 * Message list
 		 */
@@ -148,53 +179,68 @@
 				this.initRegion();
 			},
 			initViewEvent: function () {
-				this.listenTo(MusicEngine.pubsub, 'client.init.result', this.onInitResult);
-				this.listenTo(MusicEngine.pubsub, 'client.login.result', this.onLoginResult);
-				this.listenTo(MusicEngine.pubsub, 'song.submit.result', this.onSongSubmitResult);
-				this.listenTo(MusicEngine.pubsub, 'client.disconnect', this.onDisconnect);
-				this.listenTo(MusicEngine.pubsub, 'message.recive', this.onMessageRecived);
-				this.listenTo(MusicEngine.pubsub, 'song.add', this.onSongAdded);
-				this.listenTo(MusicEngine.pubsub, 'song.remove', this.onSongRemoved);
-				this.listenTo(MusicEngine.pubsub, 'playlist.fetch.result', this.onPlaylistFetchResult);
+				this.listenTo( MusicEngine.pubsub, 'client.init.result', this.onInitResult );
+				this.listenTo( MusicEngine.pubsub, 'client.login.result', this.onLoginResult );
+				this.listenTo( MusicEngine.pubsub, 'song.submit.result', this.onSongSubmitResult );
+				this.listenTo( MusicEngine.pubsub, 'client.disconnect', this.onDisconnect );
+				this.listenTo( MusicEngine.pubsub, 'message.recive', this.onMessageRecived );
+				this.listenTo( MusicEngine.pubsub, 'song.add', this.onSongAdded );
+				this.listenTo( MusicEngine.pubsub, 'song.remove', this.onSongRemoved );
+				this.listenTo( MusicEngine.pubsub, 'playlist.fetch.result', this.onPlaylistFetchResult );
 			},
 			initSocketEvent: function () {
 				var self = this;
 				socket.on( 'client.init.result', function ( data ) {
-					MusicEngine.pubsub.trigger('client.init.result', data);
+					MusicEngine.pubsub.trigger( 'client.init.result', data );
 				} );
 
 				socket.on( 'client.login.result', function ( data ) {
-					MusicEngine.pubsub.trigger('client.login.result', data);
+					MusicEngine.pubsub.trigger( 'client.login.result', data );
 				} );
 
 				socket.on( 'playlist.fetch.result', function ( data ) {
-					MusicEngine.pubsub.trigger('playlist.fetch.result', data);
+					MusicEngine.pubsub.trigger( 'playlist.fetch.result', data );
 				} );
 
 				socket.on( 'song.submit.result', function ( data ) {
-					MusicEngine.pubsub.trigger('song.submit.result', data);
+					MusicEngine.pubsub.trigger( 'song.submit.result', data );
 				} );
 				socket.on( 'song.add', function ( data ) {
-					MusicEngine.pubsub.trigger('song.add', data);
+					MusicEngine.pubsub.trigger( 'song.add', data );
 				} );
 				socket.on( 'song.remove', function ( data ) {
-					MusicEngine.pubsub.trigger('song.remove', data);
+					MusicEngine.pubsub.trigger( 'song.remove', data );
 				} );
 				socket.on( 'song.playing', function ( data ) {
-					MusicEngine.pubsub.trigger('song.playing', data);
+					MusicEngine.pubsub.trigger( 'song.playing', data );
 				} );
 				socket.on( 'song.pause', function ( data ) {
-					MusicEngine.pubsub.trigger('song.pause', data);
+					MusicEngine.pubsub.trigger( 'song.pause', data );
 				} );
 				socket.on( 'player.volumeChange', function ( data ) {
-					MusicEngine.pubsub.trigger('player.volumeChange', data);
+					MusicEngine.pubsub.trigger( 'player.volumeChange', data );
 				} );
 				socket.on( 'message.recive', function ( data ) {
-					MusicEngine.pubsub.trigger('message.recive', data);
+					MusicEngine.pubsub.trigger( 'message.recive', data );
+				} );
+				socket.on( 'player.play', function ( data ) {
+					MusicEngine.pubsub.trigger( 'player.play', data );
+				} );
+				socket.on( 'player.disconnect', function ( data ) {
+					MusicEngine.pubsub.trigger( 'player.disconnect', data );
+				} );
+				socket.on( 'player.connect', function ( data ) {
+					MusicEngine.pubsub.trigger( 'player.connect', data );
+				} );
+				socket.on( 'vote.change', function ( data ) {
+					MusicEngine.pubsub.trigger( 'vote.change', data );
+				} );
+				socket.on( 'playlist.empty', function ( data ) {
+					MusicEngine.pubsub.trigger( 'playlist.empty', data );
 				} );
 			},
-			onDisconnect:function(){
-				console.log('Your are disconnected');
+			onDisconnect: function () {
+				console.log( 'Your are disconnected' );
 				MusicEngine.playListRegion.empty();
 				MusicEngine.mesasgeRegion.empty();
 				MusicEngine.songSubmitRegion.empty();
@@ -202,71 +248,68 @@
 				MusicEngine.currentPlayingRegion.empty();
 			},
 
-			onPlaylistFetchResult:function(playlist){
-				this.songCollection.reset(playlist);
+			onPlaylistFetchResult: function ( playlist ) {
+				this.songCollection.reset( playlist );
 			},
-			onSongAdded:function(song){
-				try{
-					var newSong = new MusicEngine.Models.Song(song);
-					this.songCollection.add(newSong);
+			onSongAdded: function ( song ) {
+				try {
+					var newSong = new MusicEngine.Models.Song( song );
+					this.songCollection.add( newSong );
 				}
-				catch(e){
-					console.log( e.message);
-				}
-			},
-			onSongRemoved:function(songId){
-				try{
-					this.songCollection.remove(songId);
-				}
-				catch(e){
-					console.log( e.message);
+				catch ( e ) {
+					console.log( e.message );
 				}
 			},
-			onSongSubmitResult:function(data){
-				MusicEngine.pubsub.trigger('message.recive', data);
+			onSongRemoved: function ( songId ) {
+				try {
+					this.songCollection.remove( songId );
+				}
+				catch ( e ) {
+					console.log( e.message );
+				}
 			},
-			onMessageRecived:function(data){
-				try{
-					var newMessage = this.messageCollection.findWhere({id:data.id});
-					if(newMessage)
-					{
+			onSongSubmitResult: function ( data ) {
+				MusicEngine.pubsub.trigger( 'message.recive', data );
+			},
+			onMessageRecived: function ( data ) {
+				try {
+					var newMessage = this.messageCollection.findWhere( {id: data.id} );
+					if ( newMessage ) {
 						/**
 						 * This message is exist, update it
 						 */
-						newMessage.set(data);
+						newMessage.set( data );
 					}
-					else{
-						newMessage = new Models.Message(data);
-						this.messageCollection.add(newMessage);
+					else {
+						newMessage = new Models.Message( data );
+						this.messageCollection.push( newMessage );
 					}
-				}catch(e)
-				{
-					console.log(e);
+				} catch ( e ) {
+					console.log( e );
 				}
 			},
-			onLoginResult:function(data){
-				if(data.success){
+			onLoginResult: function ( data ) {
+				if ( data.success ) {
 					MusicEngine.loginRegion.empty();
-					MusicEngine.playListRegion.show(this.playListView);
-					MusicEngine.mesasgeRegion.show(this.messageListView);
-					MusicEngine.songSubmitRegion.show(this.songSubmitView);
-					MusicEngine.controlerRegion.show(this.controlerView);
-					MusicEngine.currentPlayingRegion.show(this.currentPlayingView);
+					MusicEngine.playListRegion.show( this.playListView );
+					MusicEngine.mesasgeRegion.show( this.messageListView );
+					MusicEngine.songSubmitRegion.show( this.songSubmitView );
+					MusicEngine.controlerRegion.show( this.controlerView );
+					MusicEngine.currentPlayingRegion.show( this.currentPlayingView );
 				}
-				else{
-					alert('Login is not successed');
+				else {
+					alert( 'Login is not successed' );
 				}
 			},
-			onInitResult:function(data){
-				if(data.isAllowed){
+			onInitResult: function ( data ) {
+				if ( data.isAllowed ) {
 					/**
 					 * Login success
 					 */
-					MusicEngine.loginRegion.show(this.loginView);
+					MusicEngine.loginRegion.show( this.loginView );
 				}
-				else
-				{
-					alert('You are not allowed : ' + data.msg);
+				else {
+					alert( 'You are not allowed : ' + data.msg );
 				}
 			},
 			initRegion: function () {
@@ -298,7 +341,7 @@
 				} );
 			},
 			onStart: function ( options ) {
-				socket.emit('client.init', {room:MusicEngine.roomId, type:'member'});
+				socket.emit( 'client.init', {room: MusicEngine.roomId, type: 'member'} );
 			},
 			onStop: function ( options ) {
 
