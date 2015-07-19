@@ -184,7 +184,6 @@ var MusicEngineApplication = {
 			io.sockets.to( socket.room ).emit( 'client.connect', _.extend( data, {id: socket.id} ) );
 			console.log( socket.id + " : LOGINED name " + socket.username );
 			socket.emit( 'message.recive', message.toJSON() );
-			socket.emit( 'player.volumeChange', {volume: room.get( 'volume' )} );
 		}
 		else {
 			socket.disconnect();
@@ -393,6 +392,22 @@ var MusicEngineApplication = {
 		}
 		socket.emit( 'member.list.fetch.result', {members: res} );
 	},
+	onPlayerInfoRequest:function(data, socket){
+		var room = this.roomList.findWhere({id:socket.room});
+		var player = room.get('players');
+		var info = {};
+		if(player != 0){
+			info ={
+				isConnected:true,
+				volume:room.get('volume')
+			};
+		}
+		else
+		{
+			info ={isConnected:false};
+		}
+		socket.emit('player.info.result', info);
+	},
 	/**
 	 *
 	 * @param socket
@@ -432,6 +447,9 @@ var MusicEngineApplication = {
 		} );
 		socket.on( 'member.list.fetch', function ( data ) {
 			self.onMemberListRequest( data, socket );
+		} );
+		socket.on( 'player.info', function ( data ) {
+			self.onPlayerInfoRequest( data, socket );
 		} );
 	},
 

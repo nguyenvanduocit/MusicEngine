@@ -30,6 +30,15 @@
 				this.listenTo( MusicEngine.pubsub, 'player.connect', this.onPlayerConnect );
 				this.listenTo( MusicEngine.pubsub, 'player.disconnect', this.onPlayerDisconnect );
 				this.listenTo( MusicEngine.pubsub, 'playlist.empty', this.onPlaylistEmpty );
+				this.listenTo( MusicEngine.pubsub, 'player.info.result', this.onPlayerInfoResult );
+			},
+			onShow:function(){
+				socket.emit('player.info');
+			},
+			onPlayerInfoResult:function(data){
+				if(data.isConnected){
+					this.updateView('playerconnected');
+				}
 			},
 			onVoteRequest: function ( e ) {
 				e.preventDefault();
@@ -113,9 +122,12 @@
 			},
 			initialize: function () {
 				this.listenTo( MusicEngine.pubsub, 'player.volumeChange', this.onVolumeChanged );
+				this.listenTo( MusicEngine.pubsub, 'player.info.result', this.onVolumeChanged );
 			},
 			onVolumeChanged: function ( data ) {
-				this.volumeControl.val( data.volume );
+				if(data.isConnected) {
+					this.volumeControl.val( data.volume );
+				}
 			},
 			onChangeVolume:function(e){
 				var val = $(e.currentTarget).val();
@@ -240,6 +252,9 @@
 				} );
 				socket.on( 'playlist.empty', function ( data ) {
 					MusicEngine.pubsub.trigger( 'playlist.empty', data );
+				} );
+				socket.on( 'player.info.result', function ( data ) {
+					MusicEngine.pubsub.trigger( 'player.info.result', data );
 				} );
 			},
 			onDisconnect: function (data) {
