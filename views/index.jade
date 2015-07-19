@@ -15,17 +15,16 @@ html
     script(src='/socket.io/socket.io.js')
     title MusicEngine
   body
-    include index-header
+    include header
     main
       #index-banner.section.no-pad-bot
-        .container
-          h1.header.center MUSIC ENGINE
+        .container(style="margin-top: 122px;margin-bottom: 100px;")
+          h1.header.center
+            img#responsive-img(src='/images/LOGO-ME-invert.png')
           .row.center
-            h4.header.col.s12.light.center The player for team, Blend your office with all music
+            h4.header.col.s12.light.center ÂM NHẠC - LẮNG ĐỘNG CHO ĐAM MÊ VÀ SÁNG TẠO.
           .row.center
-            a#download-button.btn-large.waves-effect.waves-light(href='/room') Get Started
-          .row.center
-            a.red-text.text-lighten-4(href='https://github.com/Dogfalo/materialize') alpha release v0.97.0
+            a#download-button.btn-large.waves-effect.waves-light(href='/room') BẮT ĐẦU TẠO PHÒNG
           br
         .github-commit
           .container
@@ -33,15 +32,12 @@ html
               | Latest Commit on Github:
               a.sha(href='')
               span.date
-              a#github-button.btn-flat.right.grey-text.text-lighten-5.waves-effect.waves-light.hide-on-small-only(href='https://github.com/Dogfalo/materialize') Github
+              a#github-button.btn-flat.right.grey-text.text-lighten-5.waves-effect.waves-light.hide-on-small-only(href='https://github.com/nguyenvanduocit/MusicEngine') Xem trên Github
       .container
-        .section
+        .section(style="margin-top: 31px;")
           .row
-            .col.s12.m8.offset-m2
-              br
-              img#responsive-img(src='/images/responsive.png')
-          .row
-            h3.col.s12.light.center.header MusicEngine help to connect people with one speaker.
+            h3.col.s12.light.center.header
+              | NGHE NHẠC CÙNG NHAU THẬT DỄ DÀNG
             div#loginRegion
             div#songSubmitRegion
             div#controlerRegion
@@ -51,22 +47,30 @@ html
           .row
             .col.s12.m4
               .center.promo
-                i.material-icons flash_on
-                p.promo-caption Song submition
-                p.light.center
-                  | All member in team can create account then they can submit the song for team's playlist
-            .col.s12.m4
-              .center.promo
                 i.material-icons group
-                p.promo-caption Vote
-                p.light.center
-                  | All member can vote for the action to the song, may  skip the bad song
+                p.promo-caption Chơi nhạc theo nhóm
+                p.center
+                  | Các thành viên tham gia room sẽ submit bài hát mà mình thích lên playlist của room, các bài nhạc này sẽ được chơi tuần tự.
             .col.s12.m4
               .center.promo
-                i.material-icons settings
-                p.promo-caption Easy to setup
-                p.light.center
-                  | The only one thing you have to do is access the room's page, the input your name, and then you can submit the song for all team
+                i.material-icons thumb_down
+                p.promo-caption Vote
+                p.center
+                  | Mọi thành viên có quyền vote một bài nhạc không phù hợp nào đó, Khi đủ số lượng vote đạt mức nhất định thì bài hát sẽ bị bỏ qua.
+            .col.s12.m4
+              .center.promo
+                i.material-icons library_music
+                p.promo-caption Lượng nhạc lớn
+                p.center
+                  | MusicEngine hỗ trợ tất cả các bài hát đơn được cung cấp bởi hệ thống của mp3.zing.vn và sẽ hỗ trợ cho tất cả các trang nhạc.
+        .divider
+        .section
+          .row.center
+            h3.light.header DÀNH CHO DEVELOPER
+            p.col.s8.offset-s2.caption
+              | Ứng dụng này đang trong giai đoạn thử nghiệm, có thể vẫn còn nhiều bug và các tính năng chưa hoàn thiện hoàn toàn, vì vậy rất mong nhận được sự đóng góp của các bạn.
+              | Để phát triển project này, vui lòng fork project theo button bên dưới, khi đã xong hãy tạo pull request.
+            a.btn-large.waves-effect.waves-light(href='https://github.com/nguyenvanduocit/MusicEngine') Fork project trên github
     include footer
     script(type="text/template")#login-template.
       <form id="loginForm">

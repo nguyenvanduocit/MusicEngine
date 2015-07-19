@@ -17,7 +17,7 @@ html
     script(src='/js/define.js')
     title MusicEngine
   body
-    include index-header
+    include header
     main
       #index-banner.section.no-pad-bot
         .container
@@ -79,7 +79,7 @@ html
       <strong>There are no item on the list</strong>
 
     script(type="text/template")#controler-template.
-      <input type="range" min="0" max="1" name="volume" step=".1" id="volume_control"/>
+      <input type="range" min="0" max="1" name="volume" step=".05" id="volume_control"/>
 
     script(src='/js/materialize.js')
     script(src='/js/jquery.timeago.min.js')

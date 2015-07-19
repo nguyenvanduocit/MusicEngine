@@ -66,7 +66,7 @@
     // Github Latest Commit
     if ($('.github-commit').length) { // Checks if widget div exists (Index only)
       $.ajax({
-        url: "https://api.github.com/repos/dogfalo/materialize/commits/master",
+        url: "https://api.github.com/repos/nguyenvanduocit/MusicEngine/commits/develop",
         dataType: "json",
         success: function (data) {
           var sha = data.sha,
