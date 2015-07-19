@@ -88,12 +88,12 @@ var MusicEngineApplication = {
 		if ( nextSong !== null ) {
 			room.set( 'currentSongId', nextSong.get( 'id' ) );
 			io.sockets.to( roomId ).emit( 'player.play', nextSong.toJSON() );
-			room.set('isPlaying', true);
+			room.set( 'isPlaying', true );
 			return true;
 		}
-		else{
-			io.sockets.to( roomId ).emit( 'playlist.empty', {msg:'There are no song'} );
-			room.set('isPlaying', false);
+		else {
+			io.sockets.to( roomId ).emit( 'playlist.empty', {msg: 'There are no song'} );
+			room.set( 'isPlaying', false );
 			return false;
 		}
 	},
@@ -180,10 +180,10 @@ var MusicEngineApplication = {
 			socket.join( socket.room );
 
 			socket.emit( 'client.login.result', {success: true} );
-			socket.broadcast.to( socket.room ).emit( 'client.connect', data );
+			io.sockets.to( socket.room ).emit( 'client.connect', _.extend( data, {id: socket.id} ) );
 			console.log( socket.id + " : LOGINED name " + socket.username );
 			socket.emit( 'message.recive', message.toJSON() );
-			socket.emit( 'player.volumeChange', {volume:room.get('volume')} );
+			socket.emit( 'player.volumeChange', {volume: room.get( 'volume' )} );
 		}
 		else {
 			socket.disconnect();
@@ -210,6 +210,7 @@ var MusicEngineApplication = {
 				}
 			}
 		}
+		socket.broadcast.to( socket.room ).emit( 'client.leave', {id: socket.id} );
 		socket.leave( socket.room );
 	},
 	onFetchPlaylist: function ( socket ) {
@@ -253,10 +254,10 @@ var MusicEngineApplication = {
 						 * Broadcast new song added
 						 */
 						io.to( socket.room ).emit( 'song.add', song.toJSON() );
-						var room = self.roomList.findWhere({id:socket.room});
-						var isPlaying = room.get('isPlaying');
-						if(!isPlaying){
-							self.playNextSong(socket.room);
+						var room = self.roomList.findWhere( {id: socket.room} );
+						var isPlaying = room.get( 'isPlaying' );
+						if ( ! isPlaying ) {
+							self.playNextSong( socket.room );
 						}
 					}
 					else {
@@ -276,8 +277,8 @@ var MusicEngineApplication = {
 		switch ( stage ) {
 			case 'firstLoad':
 				this.playNextSong( socket.room );
-				var room = this.roomList.get({id:socket.room});
-				socket.emit( 'player.control.volume', {value:room.get('volume')} );
+				var room = this.roomList.get( {id: socket.room} );
+				socket.emit( 'player.control.volume', {value: room.get( 'volume' )} );
 				break;
 			case 'end':
 				this.removeSong( data.song.id, socket.room );
@@ -299,7 +300,7 @@ var MusicEngineApplication = {
 	onVolumeChange: function ( data, socket ) {
 		socket.broadcast.to( socket.room ).emit( 'player.volumeChange', data );
 		var room = this.roomList.findWhere( {id: socket.room} );
-		room.set('volume', data.volume);
+		room.set( 'volume', data.volume );
 	},
 	/**
 	 * Handle vote request from member
@@ -328,12 +329,12 @@ var MusicEngineApplication = {
 					var result = this.playNextSong( socket.room );
 
 					if ( result ) {
-						message.set( 'msg', socket.username + ' vote next');
-						socket.broadcast.to( socket.room ).emit('message.recive', message.toJSON() );
+						message.set( 'msg', socket.username + ' vote next' );
+						socket.broadcast.to( socket.room ).emit( 'message.recive', message.toJSON() );
 
-						message.set('id', uuid.v1());
+						message.set( 'id', uuid.v1() );
 						message.set( 'msg', 'Play next song by ' + this.nextVoteRequired + ' vote.' );
-						io.sockets.to( socket.room ).emit('message.recive', message.toJSON() );
+						io.sockets.to( socket.room ).emit( 'message.recive', message.toJSON() );
 					}
 					else {
 						message.set( 'msg', 'Can not play next song' );
@@ -346,24 +347,50 @@ var MusicEngineApplication = {
 					 * Update vote count
 					 */
 					room.set( 'voteNext', newVote );
-					message.set( 'msg', 'You vote next, '+(this.nextVoteRequired - newVote)+' votes to next.' );
+					message.set( 'msg', 'You vote next, ' + (
+						this.nextVoteRequired - newVote
+						) + ' votes to next.' );
 					socket.emit( 'message.recive', message.toJSON() );
-					message.set('id', uuid.v1());
-					message.set( 'msg', socket.username + ' vote next');
-					socket.broadcast.to( socket.room ).emit('message.recive', message.toJSON() );
+					message.set( 'id', uuid.v1() );
+					message.set( 'msg', socket.username + ' vote next' );
+					socket.broadcast.to( socket.room ).emit( 'message.recive', message.toJSON() );
 				}
-				io.sockets.to( socket.room ).emit('vote.change',{voteValue:newVote});
+				io.sockets.to( socket.room ).emit( 'vote.change', {voteValue: newVote} );
 				break;
 			case 'volume':
 				var newVolume = data.value;
-				var playerId = room.get('players');
-				room.set('volume', newVolume);
-				socket.broadcast.to( socket.room ).emit( 'player.volumeChange', {volume:data.value} );
-				if(playerId != 0) {
+				var playerId = room.get( 'players' );
+				room.set( 'volume', newVolume );
+				socket.broadcast.to( socket.room ).emit( 'player.volumeChange', {volume: data.value} );
+				if ( playerId != 0 ) {
 					io.sockets.connected[ playerId ].emit( 'player.control.volume', {value: newVolume} );
 				}
 				break;
 		}
+	},
+	onMemberListRequest: function ( data, socket ) {
+		var res = [];
+		var ns = io.of( "/" );    // the default namespace is "/"
+		var roomId = socket.room;
+		if ( ns ) {
+			for ( var id in ns.connected ) {
+				if ( roomId ) {
+					var index = ns.connected[ id ].rooms.indexOf( roomId );
+					if ( index !== - 1 ) {
+						res.push( {
+							id: id,
+							username: ns.connected[ id ].username
+						} );
+					}
+				} else {
+					res.push( {
+						id: id,
+						username: ns.connected[ id ].username
+					} );
+				}
+			}
+		}
+		socket.emit( 'member.list.fetch.result', {members: res} );
 	},
 	/**
 	 *
@@ -401,6 +428,9 @@ var MusicEngineApplication = {
 		} );
 		socket.on( 'vote', function ( data ) {
 			self.onVoteRequest( data, socket );
+		} );
+		socket.on( 'member.list.fetch', function ( data ) {
+			self.onMemberListRequest( data, socket );
 		} );
 	},
 

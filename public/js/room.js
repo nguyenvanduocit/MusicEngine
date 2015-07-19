@@ -239,13 +239,8 @@
 					MusicEngine.pubsub.trigger( 'playlist.empty', data );
 				} );
 			},
-			onDisconnect: function () {
-				console.log( 'Your are disconnected' );
-				MusicEngine.playListRegion.empty();
-				MusicEngine.mesasgeRegion.empty();
-				MusicEngine.songSubmitRegion.empty();
-				MusicEngine.controlerRegion.empty();
-				MusicEngine.currentPlayingRegion.empty();
+			onDisconnect: function (data) {
+				console.log( 'You are disconnected' );
 			},
 
 			onPlaylistFetchResult: function ( playlist ) {
