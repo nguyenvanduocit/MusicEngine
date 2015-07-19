@@ -46,22 +46,31 @@ html
     include footer
     include template/currentPlaying
     script(type="text/template")#login-template.
+      <h3 class="light header center">Select your user name to enter the room</h3>
       <form id="loginForm">
-        <label for="loginForm_userName">Username</label>
-        <input name="username" id="loginForm_userName">
-        <input type="submit">
-      </form>
-    script(type="text/template")#songsubmit-template.
-      <h3 class="light header">Search the song in mp3.zing.vn</h3>
-      <form id="songSubmitForm">
-        <div class="row">
-          <div class="col s8">
+        <div class="row" style="margin-top: 65px">
+          <div class="col col s4 offset-s3">
             <div class="input-field">
-              <input name="url" id="songSubmitForm_url" type="text" class="validate">
-              <label for="songSubmitForm_url">Song's URL</label>
+              <input name="username" id="loginForm_userName" type="text">
+              <label for="loginForm_userName">Your name</label>
             </div>
           </div>
           <div class="col s4">
+            <button class="waves-effect waves-light btn-large" type="submit">Submit</button>
+          </div>
+        </div>
+      </form>
+    script(type="text/template")#songsubmit-template.
+      <h3 class="light header">Search the song in mp3.zing.vn</h3>
+      <form id="songSubmitForm" style="margin-top: 25px">
+        <div class="row">
+          <div class="col s9">
+            <div class="input-field">
+              <input name="url" id="songSubmitForm_url" type="text">
+              <label for="songSubmitForm_url">Song's URL</label>
+            </div>
+          </div>
+          <div class="col s3">
             <button class="waves-effect waves-light btn-large" type="submit">Submit</button>
           </div>
         </div>

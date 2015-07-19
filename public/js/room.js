@@ -138,7 +138,9 @@
 				var $target = $( e.currentTarget );
 
 				var $userNameInput = $target.find( 'input[name="username"]' );
+				var $userNameLabel = $target.find( 'label' );
 				var username = $userNameInput.val();
+				$userNameLabel.removeClass('active');
 				socket.emit( 'client.login', {username: username, room: MusicEngine.roomId} );
 			}
 
