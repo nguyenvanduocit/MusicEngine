@@ -264,7 +264,6 @@
 				} );
 			},
 			onStart: function ( options ) {
-				socket.emit( 'client.init', {room: MusicEngine.roomId, type: 'player'} );
 			},
 			onStop: function ( options ) {
 

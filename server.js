@@ -84,14 +84,16 @@ var MusicEngineApplication = {
 	},
 	playNextSong: function ( roomId ) {
 		var nextSong = this.getNextSong();
+		var room = this.roomList.findWhere( {id: roomId} );
 		if ( nextSong !== null ) {
-			var room = this.roomList.findWhere( {id: roomId} );
 			room.set( 'currentSongId', nextSong.get( 'id' ) );
 			io.sockets.to( roomId ).emit( 'player.play', nextSong.toJSON() );
+			room.set('isPlaying', true);
 			return true;
 		}
 		else{
 			io.sockets.to( roomId ).emit( 'playlist.empty', {msg:'There are no song'} );
+			room.set('isPlaying', false);
 			return false;
 		}
 	},

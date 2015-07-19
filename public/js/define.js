@@ -22,7 +22,9 @@ MusicEngine = window.MusicEngine || new Application();
 			MusicEngine.isReconnect = false;
 			MusicEngine.on( 'start', function () {
 				Backbone.history.start();
+				socket.emit( 'client.init', {room: MusicEngine.roomId, type: 'member'} );
 			} );
+
 			socket.on( 'connect', function () {
 				if(!MusicEngine.isReconnect) {
 					MusicEngine.start();

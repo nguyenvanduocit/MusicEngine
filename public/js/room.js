@@ -38,7 +38,7 @@
 
 			},
 			onPlayerPlay: function ( data ) {
-				this.updateView( 'play' );
+				this.updateView( 'playing' );
 			},
 			onPlaylistEmpty: function ( data ) {
 				this.updateView( 'nosong' );
@@ -71,7 +71,7 @@
 				this.updateView( 'playing' );
 				if ( this.currentSongId != data.song.id ) {
 					this.currentSongId = data.song.id;
-					this.titleEl.text( data.song.name );
+					this.titleEl.text( data.song.name  + ' - ' + data.song.performer);
 					this.backgroundEl.attr( 'src', data.song.image );
 				}
 				if ( this.durationEl ) {
@@ -341,7 +341,7 @@
 				} );
 			},
 			onStart: function ( options ) {
-				socket.emit( 'client.init', {room: MusicEngine.roomId, type: 'member'} );
+
 			},
 			onStop: function ( options ) {
 
