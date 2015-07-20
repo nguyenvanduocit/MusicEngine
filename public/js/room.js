@@ -124,9 +124,12 @@
 			},
 			initialize: function () {
 				this.listenTo( MusicEngine.pubsub, 'player.volumeChange', this.onVolumeChanged );
-				this.listenTo( MusicEngine.pubsub, 'player.info.result', this.onVolumeChanged );
+				this.listenTo( MusicEngine.pubsub, 'player.info.result', this.onPlayerInfo );
 			},
 			onVolumeChanged: function ( data ) {
+				this.volumeControl.val( data.volume );
+			},
+			onPlayerInfo: function ( data ) {
 				if(data.isConnected) {
 					this.volumeControl.val( data.volume );
 				}

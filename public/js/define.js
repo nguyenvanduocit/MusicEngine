@@ -18,11 +18,13 @@ MusicEngine = window.MusicEngine || new Application();
 		_.extend( MusicEngine.pubsub, Backbone.Events );
 
 		$( document ).ready( function () {
-			MusicEngine.roomId = Number( window.location.pathname.match( /\/(.*)\/(\d+)$/ )[2] );
+			var requestInfo = window.location.pathname.match( /\/(.*)\/(\d+)$/ );
+			MusicEngine.roomId = Number( requestInfo[2] );
+			MusicEngine.type = requestInfo[1];
 			MusicEngine.isReconnect = false;
 			MusicEngine.on( 'start', function () {
 				Backbone.history.start();
-				socket.emit( 'client.init', {room: MusicEngine.roomId, type: 'member'} );
+				socket.emit( 'client.init', {room: MusicEngine.roomId, type: MusicEngine.type} );
 			} );
 
 			socket.on( 'connect', function () {
