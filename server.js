@@ -136,7 +136,7 @@ var MusicEngineApplication = {
 			/**
 			 * The room is exist
 			 */
-			message.set( 'msg', 'You joined the room #' + data.room + ", Send this page's address to your friend to have fun." );
+			message.set( 'msg', 'You joined the room #' + data.room );
 			var clientInRoom = room.get( 'memberCount' );
 			clientInRoom ++;
 			room.set( 'memberCount', clientInRoom );
@@ -159,7 +159,7 @@ var MusicEngineApplication = {
 			/**
 			 * The room is not exist
 			 */
-			message.set( 'msg', 'You Create the room #' + data.room );
+			message.set( 'msg', 'You Create the room #' + data.room + ', Send this page\'s address to friend and get fun.');
 			console.log( socket.id + ' created the room #' + data.room );
 			room = new MusicEngine.Models.Room( {id: data.room, memberCount: 1} );
 			this.roomList.add( room );
@@ -227,7 +227,7 @@ var MusicEngineApplication = {
 		 */
 		socket.emit( 'song.submit.result', message.toJSON() );
 		console.log( "Processing : " + data.url );
-		request( 'http://lab.senviet.org/getlink/getlink.php?url=' + data.url, function ( error, response, body ) {
+		request( 'http://lab.wordpresskite.com/getlink/getlink.php?url=' + data.url, function ( error, response, body ) {
 			if ( ! error && response.statusCode == 200 ) {
 				try {
 					var result = JSON.parse( body );
@@ -451,8 +451,7 @@ var MusicEngineApplication = {
 		socket.on( 'player.info', function ( data ) {
 			self.onPlayerInfoRequest( data, socket );
 		} );
-	},
-
+	}
 };
 MusicEngineApplication.initialize();
 MusicEngineApplication.run();
