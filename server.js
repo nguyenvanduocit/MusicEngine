@@ -57,7 +57,7 @@ var MusicEngineApplication = {
 		this.roomList = new MusicEngine.Collections.Room();
 		this.songList = new MusicEngine.Collections.Song();
 		this.maxUser = 100;
-		this.nextVoteRequired = 2;
+		this.nextVoteRequired = 10;
 	},
 	run: function () {
 		var self = this;

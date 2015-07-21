@@ -16,32 +16,6 @@ MusicEngine = window.MusicEngine || new Application();
 		// the pub/sub object for managing event throughout the app
 		MusicEngine.pubsub = MusicEngine.pubsub || {};
 		_.extend( MusicEngine.pubsub, Backbone.Events );
-
-		$( document ).ready( function () {
-			var requestInfo = window.location.pathname.match( /\/(.*)\/(\d+)$/ );
-			MusicEngine.roomId = Number( requestInfo[ 2 ] );
-			MusicEngine.type = requestInfo[ 1 ];
-			if(MusicEngine.type == 'player' || MusicEngine.type =='room' || !MusicEngine.roomId) {
-				MusicEngine.isReconnect = false;
-				MusicEngine.on( 'start', function () {
-					Backbone.history.start();
-					socket.emit( 'client.init', {room: MusicEngine.roomId, type: MusicEngine.type} );
-				} );
-
-				socket.on( 'connect', function () {
-					if ( ! MusicEngine.isReconnect ) {
-						MusicEngine.start();
-					}
-				} );
-				socket.on( 'disconnect', function () {
-					MusicEngine.isReconnect = true;
-					MusicEngine.pubsub.trigger( 'client.disconnect' );
-				} );
-			}
-			else{
-				alert('Url is not vail');
-			}
-		} );
 	}
 )( jQuery, Backbone, Backbone.Marionette, socket, MusicEngine );
 /**
@@ -49,6 +23,11 @@ MusicEngine = window.MusicEngine || new Application();
  */
 (
 	function ( $, Backbone, Marionate, socket, MusicEngine, Views, Models, Collections ) {
+
+		var requestInfo = window.location.pathname.match( /\/(.*)\/(\d+)$/ );
+		MusicEngine.roomId = Number( requestInfo[ 2 ] );
+		MusicEngine.type = requestInfo[ 1 ];
+
 		Models.Song = Backbone.Model.extend( {
 			defaults: {
 				'own': 'un-own',

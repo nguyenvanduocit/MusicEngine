@@ -273,5 +273,33 @@
 		 * Register the module with application
 		 */
 		MusicEngine.module( "RoomModule", RoomModule );
+		/**
+		 * Run the app
+		 */
+		/**
+		 * Run de app
+		 */
+		$( document ).ready( function () {
+			if(MusicEngine.type == 'player' || MusicEngine.type =='room' || !MusicEngine.roomId) {
+				MusicEngine.isReconnect = false;
+				MusicEngine.on( 'start', function () {
+					Backbone.history.start();
+					socket.emit( 'client.init', {room: MusicEngine.roomId, type: MusicEngine.type} );
+				} );
+
+				socket.on( 'connect', function () {
+					if ( ! MusicEngine.isReconnect ) {
+						MusicEngine.start();
+					}
+				} );
+				socket.on( 'disconnect', function () {
+					MusicEngine.isReconnect = true;
+					MusicEngine.pubsub.trigger( 'client.disconnect' );
+				} );
+			}
+			else{
+				alert('Url is not vail');
+			}
+		} );
 	}
 )( jQuery, Backbone, Backbone.Marionette, socket, MusicEngine, MusicEngine.Views, MusicEngine.Models, MusicEngine.Collections );
