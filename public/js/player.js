@@ -44,13 +44,7 @@
 				var mins = Math.floor( time / 60 );
 				var secs = Math.floor( time - mins * 60 );
 				var hrs = Math.floor( time / 3600 );
-				var duration_formated = (
-					                        hrs > 9 ? hrs : "0" + hrs
-				                        ) + ":" + (
-					                        mins > 9 ? mins : "0" + mins
-				                        ) + ":" + (
-					                        secs > 9 ? secs : "0" + secs
-				                        );
+				var duration_formated = (hrs > 9 ? hrs : "0" + hrs) + ":" + (mins > 9 ? mins : "0" + mins) + ":" + (secs > 9 ? secs : "0" + secs);
 				if ( this.currentDuration !== duration_formated ) {
 					this.currentDuration = duration_formated;
 					socket.emit( 'player.stage', {
