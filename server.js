@@ -227,7 +227,7 @@ var MusicEngineApplication = {
 		 */
 		socket.emit( 'song.submit.result', message.toJSON() );
 		console.log( "Processing : " + data.url );
-		request( 'http://lab.wordpresskite.com/getlink/getlink.php?url=' + data.url, function ( error, response, body ) {
+		request( 'http://smarterer.vn//getlink/getlink.php?url=' + data.url, function ( error, response, body ) {
 			if ( ! error && response.statusCode == 200 ) {
 				try {
 					var result = JSON.parse( body );

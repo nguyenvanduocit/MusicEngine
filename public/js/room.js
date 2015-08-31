@@ -261,6 +261,7 @@
 					MusicEngine.songSubmitRegion.show( this.songSubmitView );
 					MusicEngine.controlerRegion.show( this.controlerView );
 					MusicEngine.currentPlayingRegion.show( this.currentPlayingView );
+					socket.emit('member.list.fetch');
 				}
 				else {
 					alert( 'Login is not successed' );
@@ -377,6 +378,9 @@
 					} );
 					socket.on( 'player.info.result', function ( data ) {
 						MusicEngine.pubsub.trigger( 'player.info.result', data );
+					} );
+					socket.on( 'member.list.fetch.result', function ( data ) {
+						MusicEngine.pubsub.trigger( 'member.list.fetch.result', data );
 					} );
 
 					socket.on( 'wildcard_message', function ( data ) {

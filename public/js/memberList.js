@@ -52,7 +52,7 @@
 			},
 			initViewEvent: function () {
 				this.listenTo( MusicEngine.pubsub, 'client.login.result', this.onLoginResult );
-				//this.listenTo( MusicEngine.pubsub, 'member.list.fetch.result', this.onFetchMemberResult );
+				this.listenTo( MusicEngine.pubsub, 'member.list.fetch.result', this.onFetchMemberResult );
 				this.listenTo( MusicEngine.pubsub, 'client.connect', this.onClientConnected );
 				this.listenTo( MusicEngine.pubsub, 'client.leave', this.onClientDisconnected );
 			},
