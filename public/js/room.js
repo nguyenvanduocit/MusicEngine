@@ -71,6 +71,9 @@
 				this.updateInfo( data );
 			},
 			onSongPaused: function ( data ) {
+				/**
+				 * Todo, hannel on player paused
+				 */
 			},
 			updateView: function ( stage ) {
 				if ( this.currentStage != stage ) {
