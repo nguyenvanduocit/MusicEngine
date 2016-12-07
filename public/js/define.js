@@ -35,7 +35,8 @@ MusicEngine = window.MusicEngine || new Application();
 				'name': 'un-name',
 				'performer': 'un-name',
 				'image': '',
-				'score': 0
+				'score': 0,
+				'youtubeid':0
 			}
 		} );
 		Collections.Song = Backbone.Collection.extend( {} );

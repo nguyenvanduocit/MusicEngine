@@ -8,7 +8,7 @@
 
 module.exports = function(app, express, http){
 	var port = process.env.PORT || 8282;
-	app.set( "ipaddr", process.env.IPv4||"10.0.0.19" );
+	app.set( "ipaddr", process.env.IPv4||"192.168.1.15" );
 	app.set( "port", port );
 	app.set( "views", __dirname + "/views" );
 	app.set( "view engine", "jade" );

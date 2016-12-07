@@ -227,50 +227,61 @@ var MusicEngineApplication = {
 		 */
 		socket.emit( 'song.submit.result', message.toJSON() );
 		console.log( "Processing : " + data.url );
-		request( 'http://smarterer.vn/getlink/getlink.php?url=' + data.url, function ( error, response, body ) {
-			if ( ! error && response.statusCode == 200 ) {
-				try {
-					var result = JSON.parse( body );
-					if ( result.success ) {
-						var songList = result.data;
-						if ( songList.length > 0 ) {
-							message.set( 'msg', 'Success, you submit play list, but we only accept the first song.' );
+		var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+
+		var match = data.url.match(regExp);
+		if (match) {
+			var youtubeId = match[2];
+			request( 'https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=' + youtubeId + '&key=AIzaSyBJfQqcOhrZfkXC_Xl9aa8VR_qidBSJrtU', function ( error, response, body ) {
+				if ( ! error && response.statusCode == 200 ) {
+					try {
+						var result = JSON.parse( body );
+						if ( result.items.length > 0 ) {
+							var songList = result.items;
+							if ( songList.length > 0 ) {
+								message.set( 'msg', 'Success, you submit play list, but we only accept the first song.' );
+							}
+							var songData = songList[0];
+							var song = new MusicEngine.Models.Song();
+							song.set( 'id', uuid.v1() );
+							song.set( 'own', socket.username );
+							song.set( 'url', 'http://www.youtubeinmp4.com/redirect.php?video=' +  youtubeId);
+							song.set( 'image', songData.snippet.thumbnails.standard.url );
+							song.set( 'performer', songData.snippet.channelTitle );
+							song.set( 'name', songData.snippet.title );
+							song.set( 'youtubeid', youtubeId );
+							self.songList.add( song );
+							/**
+							 * Send add song result
+							 */
+							message.set( 'msg', 'The song ' + songData.snippet.title + ' is enqueued !' );
+							socket.emit( 'song.submit.result', message.toJSON() );
+							/**
+							 * Broadcast new song added
+							 */
+							io.to( socket.room ).emit( 'song.add', song.toJSON() );
+							var room = self.roomList.findWhere( {id: socket.room} );
+							var isPlaying = room.get( 'isPlaying' );
+							if ( ! isPlaying ) {
+								self.playNextSong( socket.room );
+							}
 						}
-						var songData = songList[ 0 ];
-						var song = new MusicEngine.Models.Song();
-						song.set( 'id', uuid.v1() );
-						song.set( 'own', socket.username );
-						song.set( 'url', songData.location );
-						song.set( 'image', songData.image );
-						song.set( 'performer', songData.performer );
-						song.set( 'name', songData.title );
-						self.songList.add( song );
-						/**
-						 * Send add song result
-						 */
-						message.set( 'msg', 'The song ' + songData.title + ' is enqueued !' );
-						socket.emit( 'song.submit.result', message.toJSON() );
-						/**
-						 * Broadcast new song added
-						 */
-						io.to( socket.room ).emit( 'song.add', song.toJSON() );
-						var room = self.roomList.findWhere( {id: socket.room} );
-						var isPlaying = room.get( 'isPlaying' );
-						if ( ! isPlaying ) {
-							self.playNextSong( socket.room );
+						else {
+							message.set( 'msg', 'Your url is not valid.' );
+							socket.emit( 'song.submit.result', message.toJSON() );
 						}
-					}
-					else {
-						message.set( 'msg', 'Your url is not valid.' );
+					} catch ( e ) {
+						message.set( 'msg', 'Error : ' + e.message );
 						socket.emit( 'song.submit.result', message.toJSON() );
 					}
-				} catch ( e ) {
-					message.set( 'msg', 'Error : ' + e.message );
-					socket.emit( 'song.submit.result', message.toJSON() );
+					console.log( "END : " + data.url );
 				}
-				console.log( "END : " + data.url );
-			}
-		} );
+
+			} );
+		} else {
+			message.set( 'msg', 'Error : This is not youtube url' );
+			socket.emit( 'song.submit.result', message.toJSON() );
+		}
 	},
 	onPlayerStageUpdate: function ( data, socket ) {
 		var stage = data.stage;

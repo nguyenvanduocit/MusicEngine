@@ -10,9 +10,10 @@ html
     meta(name="theme-color", content="#EE6E73")
     script(src='/components/moment/moment.js')
     script(src='/components/jquery/dist/jquery.min.js')
-    script(src='/components/underscore/underscore-min.js')
-    script(src='/components/backbone/backbone-min.js')
-    script(src='/components/marionette/lib/backbone.marionette.min.js')
+    script(src='/components/underscore/underscore.js')
+    script(src='/components/backbone/backbone.js')
+    script(src='/components/backbone.radio/build/backbone.radio.js')
+    script(src='/components/marionette/lib/backbone.marionette.js')
     script(src='/socket.io/socket.io.js')
     script(src='/js/define.js')
     title MusicEngine
@@ -66,7 +67,7 @@ html
           <div class="col s9">
             <div class="input-field">
               <input name="url" id="songSubmitForm_url" type="text">
-              <label for="songSubmitForm_url">The song's URL in mp3.zing.vn</label>
+              <label for="songSubmitForm_url">Youtube link</label>
             </div>
           </div>
           <div class="col s3">
